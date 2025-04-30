@@ -1,0 +1,43 @@
+name: poker_planning
+description: A web application for agile poker planning sessions
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_web_plugins:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  provider: ^6.1.1
+  shared_preferences: ^2.2.2
+  uuid: ^4.2.2
+  url_launcher: ^6.2.2
+  http: ^1.1.2
+  flutter_svg: ^2.0.9
+  intl: ^0.19.0
+  firebase_core: ^3.13.0
+  firebase_database: ^11.3.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+
+flutter:
+  uses-material-design: true
+
+#  assets:
+#    - assets/images/
+#
+#  fonts:
+#    - family: Roboto
+#      fonts:
+#        - asset: assets/fonts/Roboto-Regular.ttf
+#        - asset: assets/fonts/Roboto-Bold.ttf
+#          weight: 700
+#        - asset: assets/fonts/Roboto-Light.ttf
+#          weight: 300
