@@ -9,7 +9,7 @@ class LandingPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Poker Planning'),
+        title: const Text('Planning Poker ♠️'),
       ),
       body: Center(
         child: Column(
@@ -29,14 +29,14 @@ class LandingPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
             ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.login),
-              label: const Text('Join Existing Room'),
-              onPressed: () {
-                Navigator.pushNamed(context, '/join');
-              },
-              style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
-            ),
+            // ElevatedButton.icon(
+            //   icon: const Icon(Icons.login),
+            //   label: const Text('Join Existing Room'),
+            //   onPressed: () {
+            //     Navigator.pushNamed(context, '/join');
+            //   },
+            //   style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
+            // ),
           ],
         ),
       ),

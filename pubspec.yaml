@@ -33,11 +33,11 @@ flutter:
 #  assets:
 #    - assets/images/
 #
-#  fonts:
-#    - family: Roboto
-#      fonts:
-#        - asset: assets/fonts/Roboto-Regular.ttf
-#        - asset: assets/fonts/Roboto-Bold.ttf
-#          weight: 700
-#        - asset: assets/fonts/Roboto-Light.ttf
-#          weight: 300
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto/static/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto/static/Roboto-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Roboto/static/Roboto-Light.ttf
+          weight: 300

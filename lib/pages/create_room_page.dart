@@ -1,5 +1,4 @@
 // --- Create Room Page ---
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/services/firebase_service.dart';
 import 'package:provider/provider.dart';
@@ -20,7 +19,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create Planning Room'),
+        title: const Text('Planning Poker ♠️'),
       ),
       body: Center(
         child: Container(
@@ -31,10 +30,15 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
+                const Text(
+                  'Create a new room!',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 40),
                 TextFormField(
                   controller: _nameController,
                   decoration: const InputDecoration(
-                    labelText: 'Your Name',
+                    labelText: 'Enter Your Name',
                     // border: OutlineInputBorder(), // Using theme default
                   ),
                   validator: (value) {
@@ -43,17 +47,25 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     }
                     return null;
                   },
+                  // Aggiungi questa riga:
+                  onFieldSubmitted: (_) {
+                    // Chiama la stessa funzione usata dal pulsante
+                    if (!_isLoading) {
+                      // Evita doppie chiamate se già in caricamento
+                      _createRoom();
+                    }
+                  },
                 ),
                 const SizedBox(height: 24),
                 _isLoading
                     ? const CircularProgressIndicator()
                     : ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  onPressed: _createRoom,
-                  child: const Text('Create Room'),
-                ),
+                        style: ElevatedButton.styleFrom(
+                          minimumSize: const Size.fromHeight(50),
+                        ),
+                        onPressed: _createRoom,
+                        child: const Text('Create Room'),
+                      ),
               ],
             ),
           ),
@@ -68,15 +80,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         _isLoading = true;
       });
       final firebaseService =
-      Provider.of<RealtimeFirebaseService>(context, listen: false);
-      final navigator =
-      Navigator.of(context); // Grab navigator before async gap
-      final messenger =
-      ScaffoldMessenger.of(context); // Grab messenger before async gap
+          Provider.of<RealtimeFirebaseService>(context, listen: false);
+      final navigator = Navigator.of(context);
+      final messenger = ScaffoldMessenger.of(context);
 
       try {
         final room =
-        await firebaseService.createRoom(creatorName: _nameController.text);
+            await firebaseService.createRoom(creatorName: _nameController.text);
         // Navigate to the room, passing necessary details
         navigator.pushReplacementNamed(
           '/room/${room.id}', // Use path parameter for consistency
@@ -84,7 +94,6 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             'roomId': room.id,
             'participantId': room.creatorId,
             'userName': _nameController.text,
-            // 'isCreator': true, // Optionally pass this
           },
         );
       } catch (e) {
@@ -107,4 +116,3 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
     super.dispose();
   }
 }
-
