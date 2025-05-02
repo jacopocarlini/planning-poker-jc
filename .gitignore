@@ -41,3 +41,5 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+/.firebase/hosting.cHVibGlj.cache
+/.firebase/hosting.YnVpbGQvd2Vi.cache
