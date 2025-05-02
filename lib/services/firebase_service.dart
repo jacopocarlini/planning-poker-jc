@@ -4,169 +4,10 @@ import 'dart:math'; // Necessario per _generateUserId
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:poker_planning/models/participant.dart';
+import 'package:poker_planning/models/room.dart';
 
-import 'firebase_options.dart';
-
-// --- Data Models (Devono essere definiti qui o importati) ---
-// Assicurati che le classi Participant e Room con i metodi
-// toJson(), fromJson(), toJsonForDb(), fromSnapshot() siano presenti.
-// (Le definizioni fornite nella risposta precedente sono adatte)
-class Participant {
-  final String id;
-  final String name;
-  final String? vote;
-  final bool isCreator;
-
-  Participant({
-    required this.id,
-    required this.name,
-    this.vote,
-    this.isCreator = false,
-  });
-
-  Participant copyWith({
-    String? id,
-    String? name,
-    String? vote,
-    bool? isCreator,
-    bool? clearVote,
-  }) {
-    return Participant(
-      id: id ?? this.id,
-      name: name ?? this.name,
-      vote: clearVote == true ? null : vote ?? this.vote,
-      isCreator: isCreator ?? this.isCreator,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-    'id': id,
-    'name': name,
-    'vote': vote,
-    'isCreator': isCreator,
-  };
-
-  static Participant fromJson(Map<String, dynamic> json) => Participant(
-    id: json['id'] as String? ?? "default_id_${Random().nextInt(1000)}", // Fallback ID se mancante
-    name: json['name'] as String? ?? 'Unknown', // Fallback nome se mancante
-    vote: json['vote'] as String?,
-    isCreator: json['isCreator'] as bool? ?? false,
-  );
-}
-
-class Room {
-  final String id;
-  final String creatorId;
-  final List<Participant> participants;
-  final bool areCardsRevealed;
-  final List<String> cardValues;
-
-  Room({
-    required this.id,
-    required this.creatorId,
-    required this.participants,
-    this.areCardsRevealed = false,
-    this.cardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'],
-  });
-
-  Room copyWith({
-    String? id,
-    String? creatorId,
-    List<Participant>? participants,
-    bool? areCardsRevealed,
-    List<String>? cardValues,
-  }) {
-    return Room(
-      id: id ?? this.id,
-      creatorId: creatorId ?? this.creatorId,
-      participants: participants ?? this.participants,
-      areCardsRevealed: areCardsRevealed ?? this.areCardsRevealed,
-      cardValues: cardValues ?? this.cardValues,
-    );
-  }
-
-  factory Room.fromSnapshot(DataSnapshot snapshot) {
-    final roomId = snapshot.key!;
-    final value = snapshot.value; // Può essere null se la stanza è vuota o non esiste
-
-    // Gestione del caso in cui value sia null o non sia una mappa
-    if (value == null || value is! Map) {
-      // Potresti lanciare un'eccezione specifica o restituire una Room 'vuota' o di default
-      print("Warning: Room data for $roomId is null or not a Map. Value: $value");
-      // In questo caso, lanciamo un'eccezione perché una stanza valida DEVE essere una mappa
-      throw FormatException("Invalid data format for room $roomId. Expected a Map.");
-    }
-
-    // Ora sappiamo che value è una Map, possiamo fare il cast sicuro
-    final data = Map<String, dynamic>.from(value as Map);
-
-    final participantsMap = data['participants'] as Map<dynamic, dynamic>? ?? {};
-    final participantsList = participantsMap.entries.map((entry) {
-      final participantId = entry.key as String;
-      // Controlla se il valore del partecipante è una mappa valida
-      final participantValue = entry.value;
-      if (participantValue is Map) {
-        final participantData = Map<String, dynamic>.from(participantValue);
-        // Assicurati che l'ID esista o usa la chiave come fallback
-        participantData['id'] = participantData['id'] ?? participantId;
-        try {
-          return Participant.fromJson(participantData);
-        } catch (e) {
-          print("Error parsing participant $participantId in room $roomId: $e. Data: $participantData");
-          // Salta questo partecipante o crea un partecipante di default
-          return Participant(id: participantId, name: "Error Parsing", isCreator: false);
-        }
-      } else {
-        print("Warning: Invalid data for participant $participantId in room $roomId. Value: $participantValue");
-        // Salta questo partecipante o crea un partecipante di default
-        return Participant(id: participantId, name: "Invalid Data", isCreator: false);
-      }
-
-    }).toList();
-
-
-    final defaultCardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'];
-    final dbCardValues = data['cardValues'] as List<dynamic>?;
-
-    List<String> cardValuesList;
-    if (dbCardValues != null) {
-      // Filtra eventuali valori null o non stringa prima della conversione
-      cardValuesList = dbCardValues
-          .where((v) => v != null)
-          .map((v) => v.toString())
-          .toList();
-      // Se dopo il filtro la lista è vuota, usa il default
-      if (cardValuesList.isEmpty) {
-        cardValuesList = defaultCardValues;
-      }
-    } else {
-      cardValuesList = defaultCardValues;
-    }
-
-
-    return Room(
-      id: roomId,
-      creatorId: data['creatorId'] as String? ?? '',
-      participants: participantsList,
-      areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
-      cardValues: cardValuesList,
-    );
-  }
-
-  Map<String, dynamic> toJsonForDb() => {
-    // 'id': id, // L'ID è la CHIAVE nel DB
-    'creatorId': creatorId,
-    'participants': Map.fromEntries(
-        participants.map((p) => MapEntry(p.id, p.toJson()))
-    ),
-    'areCardsRevealed': areCardsRevealed,
-    'cardValues': cardValues,
-  };
-}
-// --- FINE DATA MODELS ---
-
-
-// --- Servizio Firebase Reale (Modalità Aperta) ---
+import '../firebase_options.dart';
 
 class RealtimeFirebaseService {
   late final FirebaseDatabase _database;
@@ -382,6 +223,53 @@ class RealtimeFirebaseService {
     } catch (e) {
       print("Error updating card set for $roomId: $e");
       throw Exception("Database error updating card set: $e");
+    }
+  }
+
+  /// Sets up the onDisconnect handler to remove the participant when connection is lost.
+  Future<void> setupPresence(String roomId, String participantId) async {
+    if (participantId.isEmpty) {
+      print("Warning: Cannot set up presence without a valid participantId.");
+      return;
+    }
+    // Path to the specific participant within the room
+    final participantRef = _database.ref('rooms/$roomId/participants/$participantId');
+
+    try {
+      // When the client disconnects, remove their data from the participants list
+      await participantRef.onDisconnect().remove();
+      print("Firebase onDisconnect handler set up for participant $participantId in room $roomId.");
+
+      final participantsSnapshot = await _getRoomRef(roomId).child('participants').get();
+      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map)) {
+        await _getRoomRef(roomId).remove();
+      }
+
+    } catch (e) {
+      print("Error setting up Firebase onDisconnect handler: $e");
+      // Handle error appropriately, maybe retry or log
+    }
+  }
+
+  /// Explicitly removes a participant from the room.
+  Future<void> removeParticipant(String roomId, String participantId) async {
+    if (participantId.isEmpty) {
+      print("Warning: Cannot remove participant without a valid participantId.");
+      return;
+    }
+    final participantRef = _database.ref('rooms/$roomId/participants/$participantId');
+    try {
+      await participantRef.remove();
+      print("Participant $participantId explicitly removed from room $roomId.");
+
+      final participantsSnapshot = await _getRoomRef(roomId).child('participants').get();
+      print(participantsSnapshot.value);
+      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map)) {
+        await _getRoomRef(roomId).remove();
+      }
+
+    } catch (e) {
+      print("Error removing participant $participantId from room $roomId: $e");
     }
   }
 }
