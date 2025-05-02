@@ -1,15 +1,13 @@
 # Poker Planning App ♠️
 
-## Description & Link
-
-A real-time Planning Poker application built with Flutter and Firebase. This tool helps Agile teams estimate tasks collaboratively by allowing participants to vote simultaneously and then revealing the votes to facilitate discussion.
+A light Planning Poker application built with Flutter and Firebase. 
+This tool helps Agile teams estimate tasks collaboratively by allowing participants to vote simultaneously and then revealing the votes to facilitate discussion.
 
 **Key Features:**
 
 *   Create new planning rooms.
-*   Join existing rooms using a Room ID.
-*   Real-time participant list with online status.
-*   Select voting cards (e.g., Fibonacci sequence).
+*   Join existing rooms using a link.
+*   Select voting cards (only Fibonacci is supported).
 *   See who has voted (without revealing the vote value).
 *   Reveal all votes simultaneously.
 *   View voting results, including:
