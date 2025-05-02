@@ -56,16 +56,12 @@ Follow these steps to set up and run the project on your local machine:
     cd jacopocarlini/planning-poker-jc
     ```
 
-2.  **Create a Firebase Project:**
-    *   Go to the [Firebase Console](https://console.firebase.google.com/).
-    *   Click "Add project" and follow the steps to create a new project.
-
-3.  **Install Dependencies:**
+2.  **Install Dependencies:**
     ```bash
     flutter pub get
     ```
 
-4.  **Run the App (Web):**
+3.  **Run the App (Web):**
     ```bash
     flutter run -d chrome
     ```
