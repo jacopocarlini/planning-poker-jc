@@ -230,7 +230,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Room: ${widget.roomId}'),
+        title: Text('Planning Poker ♠️'),
         // Show user's name
         actions: [
           IconButton(
@@ -674,11 +674,11 @@ class _PlanningRoomState extends State<PlanningRoom> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Share this link or Room ID with your team:'),
+            const Text('Share this link with your team:'),
             const SizedBox(height: 16),
             _buildShareItem('Room Link:', roomUrl, context),
-            const SizedBox(height: 16),
-            _buildShareItem('Room ID:', widget.roomId, context),
+            // const SizedBox(height: 16),
+            // _buildShareItem('Room ID:', widget.roomId, context),
           ],
         ),
         actions: [

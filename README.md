@@ -20,7 +20,7 @@ A real-time Planning Poker application built with Flutter and Firebase. This too
 
 **Live Demo:**
 
-[Access the live application here]([YOUR_DEPLOYMENT_LINK_HERE](https://poker-planning-jc.web.app/)) 
+[Access the live application here](https://poker-planning-jc.web.app)
 
 <img width="1400" alt="image" src="https://github.com/user-attachments/assets/5baa43f9-e451-490f-9bf9-a8e861120ad0" />
 

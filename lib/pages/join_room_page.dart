@@ -27,8 +27,8 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              'Join to Room ${widget.roomId}',
+            const Text(
+              'Join to Room',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             Container(
