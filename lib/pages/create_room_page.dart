@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/user_profile_chip.dart';
 import 'package:poker_planning/services/firebase_service.dart'; // Assicurati che il percorso sia corretto
+import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
 
 // --- Definisci i set di carte disponibili ---
@@ -26,12 +28,17 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
   // Stato per memorizzare il nome del set di carte selezionato
   String _selectedCardSetName = availableCardSets.keys.first; // Default al primo set
+  final _prefsService = UserPreferencesService(); // Istanza del servizio prefs
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Planning Poker ♠️'),
+        actions: const [
+          UserProfileChip(),
+          SizedBox(width: 20,)
+        ],
       ),
       body: Center(
         child: Container(
@@ -47,23 +54,23 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter Your Name',
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a valid name'; // Messaggio corretto
-                    }
-                    return null;
-                  },
-                  onFieldSubmitted: (_) {
-                    if (!_isLoading) {
-                      _createRoom();
-                    }
-                  },
-                ),
+                // TextFormField(
+                //   controller: _nameController,
+                //   decoration: const InputDecoration(
+                //     labelText: 'Enter Your Name',
+                //   ),
+                //   validator: (value) {
+                //     if (value == null || value.isEmpty) {
+                //       return 'Please enter a valid name'; // Messaggio corretto
+                //     }
+                //     return null;
+                //   },
+                //   onFieldSubmitted: (_) {
+                //     if (!_isLoading) {
+                //       _createRoom();
+                //     }
+                //   },
+                // ),
                 const SizedBox(height: 24), // Spazio prima del dropdown
 
                 // --- Dropdown per la selezione del set di carte ---
@@ -137,9 +144,10 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
 
       try {
+        String username = (await _prefsService.getUsername())!;
         // Passa il set di carte selezionato al service
         final room = await firebaseService.createRoom(
-          creatorName: _nameController.text,
+          creatorName: username,
           cardValues: selectedCards, // Passa il set di carte
         );
         navigator.pushReplacementNamed(
@@ -147,7 +155,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
           arguments: {
             'roomId': room.id,
             'participantId': room.creatorId,
-            'userName': _nameController.text,
+            'userName': username,
             // Non c'è bisogno di passare di nuovo le carte qui,
             // la RoomPage le leggerà da Firebase usando l'ID della stanza.
           },

@@ -44,7 +44,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
                       controller: _nameController,
                       decoration: const InputDecoration(
                         labelText: 'Enter Your Name',
-                        // border: OutlineInputBorder(), // Using theme default
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {

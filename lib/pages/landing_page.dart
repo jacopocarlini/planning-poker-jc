@@ -1,14 +1,23 @@
 // --- Landing Page (New) ---
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/user_profile_chip.dart';
+
 
 class LandingPage extends StatelessWidget {
-  const LandingPage({Key? key}) : super(key: key);
+  LandingPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Planning Poker ♠️'),
+        automaticallyImplyLeading: false,
+        actions: const [
+          UserProfileChip(),
+          SizedBox(
+            width: 20,
+          )
+        ],
       ),
       body: Center(
         child: Column(

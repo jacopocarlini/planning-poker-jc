@@ -7,6 +7,7 @@ import 'package:poker_planning/pages/landing_page.dart';
 import 'package:poker_planning/pages/planning_room_page.dart';
 import 'package:provider/provider.dart';
 
+import 'pages/auth_wrapper.dart';
 import 'services/firebase_service.dart';
 
 // --- Entry Point ---
@@ -47,7 +48,7 @@ class PokerPlanningApp extends StatelessWidget {
 
         if (uri.pathSegments.isEmpty || uri.path == '/') {
           return MaterialPageRoute(
-              builder: (_) => const LandingPage(), settings: settings);
+              builder: (_) => const AuthWrapper(), settings: settings);
         } else if (uri.pathSegments.first == 'create') {
           return MaterialPageRoute(
               builder: (_) => const CreateRoomPage(), settings: settings);
@@ -75,7 +76,7 @@ class PokerPlanningApp extends StatelessWidget {
 
         // Fallback to Landing Page for unknown routes
         return MaterialPageRoute(
-            builder: (_) => const LandingPage(), settings: settings);
+            builder: (_) =>  LandingPage(), settings: settings);
       },
     );
   }

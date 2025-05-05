@@ -4,10 +4,14 @@ import 'dart:math'; // Needed for min/max
 
 import 'package:collection/collection.dart'; // Import for firstWhereOrNull
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/user_profile_chip.dart';
+import 'package:poker_planning/config/theme.dart';
 import 'package:poker_planning/models/participant.dart';
 import 'package:poker_planning/models/room.dart';
 import 'package:poker_planning/services/firebase_service.dart';
+import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
+
 
 // --- Planning Room Widget ---
 class PlanningRoom extends StatefulWidget {
@@ -34,10 +38,9 @@ class _PlanningRoomState extends State<PlanningRoom> {
   late String _myUserName;
   String? _selectedVote;
   bool _isLoading = true;
-  bool _isJoining = false;
   bool _presenceSetupDone = false;
   final TextEditingController _nameController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  final _prefsService = UserPreferencesService();
 
   @override
   void initState() {
@@ -184,7 +187,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   Widget build(BuildContext context) {
     // Use local variables for null safety checks inside the build method
     final Room? room = _currentRoom;
-    final bool isLoading = _isLoading || (_isJoining && room == null);
+    final bool isLoading = _isLoading || room == null;
 
     if (isLoading) {
       return Scaffold(
@@ -236,11 +239,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
         title: Text('Planning Poker ♠️'),
         // Show user's name
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person),
-            tooltip: 'Profile',
-            onPressed: _changeProfile,
-          ),
+          UserProfileChip(onTap: _saveProfile),
           IconButton(
             icon: const Icon(Icons.share),
             tooltip: 'Share Room Link',
@@ -337,9 +336,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
           decoration: BoxDecoration(
               color: Colors.blueGrey.shade50, // Slightly different background
               border: Border.all(
-                color: isMe
-                    ? Colors.deepPurple.shade300
-                    : Colors.blueGrey.shade200,
+                color: isMe ? primaryBlue : Colors.blueGrey.shade200,
                 width: isMe ? 2.5 : 1.5, // Thicker border for 'me'
               ),
               borderRadius: BorderRadius.circular(8),
@@ -422,7 +419,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     return ElevatedButton.icon(
       style: ElevatedButton.styleFrom(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          backgroundColor: cardsRevealed ? Colors.orangeAccent : Colors.indigo,
+          backgroundColor: cardsRevealed ? accentYellow : primaryBlue,
           // Use different colors
           foregroundColor: Colors.white,
           // Text color
@@ -622,19 +619,19 @@ class _PlanningRoomState extends State<PlanningRoom> {
                           // Center vertically
                           decoration: BoxDecoration(
                             color: isSelected
-                                ? Colors.deepPurple.shade400
+                                ? lightBlue
                                 : Colors.white, // Different selected color
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
                               color: isSelected
-                                  ? Colors.deepPurple.shade700
+                                  ? primaryBlue
                                   : Colors.blueGrey.shade300,
                               width: isSelected ? 3 : 1.5,
                             ),
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color: Colors.deepPurple.withOpacity(0.4),
+                                      color: primaryBlue.withOpacity(0.4),
                                       blurRadius: 6,
                                       offset: const Offset(0, 3),
                                     )
@@ -654,9 +651,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                               style: TextStyle(
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected
-                                    ? Colors.white
-                                    : Colors.deepPurple.shade700,
+                                color: isSelected ? Colors.white : primaryBlue,
                               ),
                             ),
                           ),
@@ -790,59 +785,57 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
-  void _changeProfile() {
-    _nameController.text = _myUserName;
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit your profile'),
-        content: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Change your name'),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter Your Name',
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty || value.trim().isEmpty) {
-                    return 'Please enter a valid name';
-                  }
-                  return null;
-                },
-                onFieldSubmitted: (value) => _saveProfile(context),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async => await _saveProfile(context),
-            child: const Text("Save"),
-          ),
-        ],
-      ),
-    );
-  }
+  // void _changeProfile() {
+  //   _nameController.text = _myUserName;
+  //   showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: const Text('Edit your profile'),
+  //       content: Form(
+  //         key: _formKey,
+  //         child: Column(
+  //           mainAxisSize: MainAxisSize.min,
+  //           crossAxisAlignment: CrossAxisAlignment.start,
+  //           children: [
+  //             const Text('Change your name'),
+  //             const SizedBox(height: 16),
+  //             TextFormField(
+  //               controller: _nameController,
+  //               decoration: const InputDecoration(
+  //                 labelText: 'Enter Your Name',
+  //               ),
+  //               validator: (value) {
+  //                 if (value == null || value.isEmpty || value.trim().isEmpty) {
+  //                   return 'Please enter a valid name';
+  //                 }
+  //                 return null;
+  //               },
+  //               onFieldSubmitted: (value) => _saveProfile(context),
+  //             ),
+  //           ],
+  //         ),
+  //       ),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () async => await _saveProfile(),
+  //           child: const Text("Save"),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  Future<void> _saveProfile(BuildContext context) async {
+  Future<void> _saveProfile() async {
     {
-      if (_formKey.currentState!.validate()) {
-        setState(() {
-          _myUserName = _nameController.text.trim();
-        });
-        await _firebaseService.updateParticipantName(
-          widget.roomId,
-          _myParticipantId,
-          _nameController.text.trim(),
-        );
-        Navigator.pop(context);
-      }
+      var userName = (await _prefsService.getUsername() ?? "Unknown").trim();
+      setState(() {
+        _myUserName = userName;
+      });
+      await _firebaseService.updateParticipantName(
+        widget.roomId,
+        _myParticipantId,
+        userName,
+      );
     }
   }
 }

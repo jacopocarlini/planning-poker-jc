@@ -28,6 +28,7 @@ MaterialColor createMaterialColor(Color color) {
 // Using hex codes often gives more precision than named Material colors.
 // Use a color picker tool on the screenshot for best results.
 const Color primaryBlue = Color(0xFF4A90E2); // Main blue from banner/buttons
+const Color lightBlue = Color(0xFF5D9FEC);
 const Color lightGreyBackground = Color(0xFFF8F9FA); // Very light main background
 const Color cardWhite = Colors.white;
 const Color darkText = Color(0xFF4A4A4A); // Dark grey for text
