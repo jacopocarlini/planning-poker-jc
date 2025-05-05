@@ -20,6 +20,18 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
   bool _isLoading = false;
 
   @override
+  initState() {
+    super.initState();
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      var username = await _prefsService.getUsername();
+      if (username != null && username.isNotEmpty) {
+        _auxJoinRoom();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -82,59 +94,69 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
 
   Future<void> _joinRoom() async {
     if (_formKey.currentState!.validate()) {
+      _auxJoinRoom();
+    }
+  }
+
+  _auxJoinRoom() async {
+    setState(() {
+      _isLoading = true;
+    });
+    final firebaseService =
+        Provider.of<RealtimeFirebaseService>(context, listen: false);
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final name = _nameController.text.trim();
+    if(name.isEmpty) {
       setState(() {
-        _isLoading = true;
+        _isLoading = false;
       });
-      final firebaseService =
-          Provider.of<RealtimeFirebaseService>(context, listen: false);
-      final navigator = Navigator.of(context);
-      final messenger = ScaffoldMessenger.of(context);
-      final name = _nameController.text.trim();
-      await _prefsService.saveUsername(name);
+      return;
+    }
+    await _prefsService.saveUsername(name);
 
-      try {
-        final room = await firebaseService.joinRoom(
-            roomId: widget.roomId, participantName: name);
+    try {
+      final room = await firebaseService.joinRoom(
+          roomId: widget.roomId, participantName: name);
 
-        if (room == null) {
-          setState(() {
-            _isLoading = false;
-          });
-          messenger.showSnackBar(
-            SnackBar(
-                content: Text('Room ${widget.roomId} not found.'),
-                backgroundColor: Colors.orange),
-          );
-          return;
-        }
-
-        // Find the ID of the participant who just joined
-        final participantId = room.participants
-            .firstWhere((p) => p.name == name && !p.isCreator,
-                // Be careful if names aren't unique!
-                orElse: () => room.participants.last // Fallback, less reliable
-                )
-            .id;
-
-        navigator.pushReplacementNamed(
-          '/room/$widget.roomId', // Use path parameter
-          arguments: {
-            'roomId': widget.roomId,
-            'participantId': participantId,
-            'userName': name,
-            // 'isCreator': false, // Optionally pass this
-          },
-        );
-      } catch (e) {
+      if (room == null) {
         setState(() {
           _isLoading = false;
         });
         messenger.showSnackBar(
           SnackBar(
-              content: Text('Failed to join room: $e'),
-              backgroundColor: Colors.red),
+              content: Text('Room ${widget.roomId} not found.'),
+              backgroundColor: Colors.orange),
         );
+        return;
       }
+
+      // Find the ID of the participant who just joined
+      final participantId = room.participants
+          .firstWhere((p) => p.name == name && !p.isCreator,
+              // Be careful if names aren't unique!
+              orElse: () => room.participants.last // Fallback, less reliable
+              )
+          .id;
+
+      navigator.pushReplacementNamed(
+        '/room/$widget.roomId', // Use path parameter
+        arguments: {
+          'roomId': widget.roomId,
+          'participantId': participantId,
+          'userName': name,
+          // 'isCreator': false, // Optionally pass this
+        },
+      );
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      messenger.showSnackBar(
+        SnackBar(
+            content: Text('Failed to join room: $e'),
+            backgroundColor: Colors.red),
+      );
     }
   }
 
