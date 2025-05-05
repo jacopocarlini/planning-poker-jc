@@ -811,7 +811,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty || value.trim().isEmpty) {
-                    return 'Please a valid name';
+                    return 'Please enter a valid name';
                   }
                   return null;
                 },

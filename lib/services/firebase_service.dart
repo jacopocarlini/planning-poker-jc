@@ -34,7 +34,7 @@ class RealtimeFirebaseService {
   }
 
   // Create a new room
-  Future<Room> createRoom({required String creatorName}) async {
+  Future<Room> createRoom({required String creatorName, required List<String> cardValues}) async {
     print("Creating real Firebase room for $creatorName...");
 
     final creatorId = _generateUserId(); // ID casuale per il creatore
@@ -47,7 +47,8 @@ class RealtimeFirebaseService {
     final newRoom = Room(
       id: roomId,
       creatorId: creatorId,
-      participants: [creator], // Inizia con il creatore
+      participants: [creator], // Inizia con il creatore,
+      cardValues: cardValues
     );
 
     try {
@@ -91,8 +92,7 @@ class RealtimeFirebaseService {
       if (!updatedSnapshot.exists)
         return null; // Stanza eliminata nel frattempo?
 
-      print(
-          "$participantName ($participantId) joined real room $roomId");
+      print("$participantName ($participantId) joined real room $roomId");
       return Room.fromSnapshot(updatedSnapshot); // Ritorna la stanza aggiornata
     } catch (e) {
       print("Error joining room $roomId: $e");
@@ -112,8 +112,7 @@ class RealtimeFirebaseService {
     return roomRef.onValue.map((event) {
       final snapshot = event.snapshot;
       if (!snapshot.exists || snapshot.value == null) {
-        print(
-            "Snapshot for room $roomId doesn't exist or is null in stream.");
+        print("Snapshot for room $roomId doesn't exist or is null in stream.");
         throw Exception("Room $roomId not found or has been deleted.");
       }
       try {
@@ -140,8 +139,7 @@ class RealtimeFirebaseService {
       {required String roomId,
       required String participantId,
       required String? vote}) async {
-    print(
-        "Submitting real vote '$vote' for $participantId in room $roomId...");
+    print("Submitting real vote '$vote' for $participantId in room $roomId...");
     // Riferimento diretto al campo 'vote' di quel partecipante
     final voteRef =
         _getRoomRef(roomId).child('participants/$participantId/vote');
@@ -364,7 +362,8 @@ class RealtimeFirebaseService {
     }
   }
 
-  Future<void> updateParticipantName(String roomId, String participantId, String newName) async {
+  Future<void> updateParticipantName(
+      String roomId, String participantId, String newName) async {
     if (roomId.isEmpty) {
       print("Error: Cannot update participant name with empty roomId.");
       throw ArgumentError("Room ID cannot be empty.");
@@ -373,27 +372,29 @@ class RealtimeFirebaseService {
       print("Error: Cannot update participant name with empty participantId.");
       throw ArgumentError("Participant ID cannot be empty.");
     }
-    final trimmedNewName = newName.trim(); // Rimuovi spazi bianchi iniziali/finali
+    final trimmedNewName =
+        newName.trim(); // Rimuovi spazi bianchi iniziali/finali
     if (trimmedNewName.isEmpty) {
       print("Error: Cannot update participant name to an empty string.");
       throw ArgumentError("New name cannot be empty or just whitespace.");
     }
 
-    print("Attempting to update participant $participantId in room $roomId to name '$trimmedNewName'...");
+    print(
+        "Attempting to update participant $participantId in room $roomId to name '$trimmedNewName'...");
 
     // 2. Riferimento al campo 'name' specifico del partecipante
     final DatabaseReference participantNameRef =
-    _getRoomRef(roomId).child('participants/$participantId/name');
+        _getRoomRef(roomId).child('participants/$participantId/name');
 
     try {
       // 3. Esegui l'aggiornamento usando set() sul riferimento specifico del nome
       // Questo sovrascrive solo il valore del campo 'name'.
       await participantNameRef.set(trimmedNewName);
-      print("Successfully updated name for participant $participantId in room $roomId.");
-
-
+      print(
+          "Successfully updated name for participant $participantId in room $roomId.");
     } catch (e) {
-      print("Error updating name for participant $participantId in room $roomId: $e");
+      print(
+          "Error updating name for participant $participantId in room $roomId: $e");
       // Rilancia l'eccezione per farla gestire dal chiamante (es. UI)
       throw Exception("Database error updating participant name: $e");
     }
