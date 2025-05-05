@@ -6,11 +6,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:poker_planning/models/participant.dart';
 import 'package:poker_planning/models/room.dart';
+import 'package:poker_planning/services/user_preferences_service.dart';
 
 import '../firebase_options.dart';
 
 class RealtimeFirebaseService {
   late final FirebaseDatabase _database;
+  final _prefsService = UserPreferencesService();
 
   // Riferimento base per tutte le stanze
   DatabaseReference get _roomsRef => _database.ref('rooms');
@@ -37,9 +39,13 @@ class RealtimeFirebaseService {
   Future<Room> createRoom({required String creatorName, required List<String> cardValues}) async {
     print("Creating real Firebase room for $creatorName...");
 
-    final creatorId = _generateUserId(); // ID casuale per il creatore
+    var creatorId = _generateUserId(); // ID casuale per il creatore
+    if(await _prefsService.hasId()){
+      creatorId = (await _prefsService.getId())!;
+    }
     final creator =
         Participant(id: creatorId, name: creatorName, isCreator: true);
+    _prefsService.saveId(creatorId);
 
     final newRoomRef = _roomsRef.push(); // Firebase genera l'ID della stanza
     final roomId = newRoomRef.key!;
@@ -76,9 +82,14 @@ class RealtimeFirebaseService {
         return null;
       }
 
-      final participantId = _generateUserId(); // Nuovo ID casuale
+      var participantId = _generateUserId(); // Nuovo ID casuale
+      if(await _prefsService.hasId()){
+        participantId = (await _prefsService.getId())!;
+      }
       final newParticipant =
           Participant(id: participantId, name: participantName);
+      _prefsService.saveId(participantId);
+
 
       // Aggiungi il partecipante alla mappa nel DB
       // Usa `update` per aggiungere/modificare solo questo partecipante
