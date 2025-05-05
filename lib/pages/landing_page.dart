@@ -1,5 +1,4 @@
 // --- Landing Page (New) ---
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class LandingPage extends StatelessWidget {
@@ -29,14 +28,6 @@ class LandingPage extends StatelessWidget {
               style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
             ),
             const SizedBox(height: 20),
-            // ElevatedButton.icon(
-            //   icon: const Icon(Icons.login),
-            //   label: const Text('Join Existing Room'),
-            //   onPressed: () {
-            //     Navigator.pushNamed(context, '/join');
-            //   },
-            //   style: ElevatedButton.styleFrom(minimumSize: const Size(200, 50)),
-            // ),
           ],
         ),
       ),

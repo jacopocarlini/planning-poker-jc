@@ -36,6 +36,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _isLoading = true;
   bool _isJoining = false;
   bool _presenceSetupDone = false;
+  final TextEditingController _nameController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -111,6 +113,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _firebaseService.removeParticipant(widget.roomId, _myParticipantId);
     _roomSubscription?.cancel();
     _roomSubscription = null;
+    _nameController.dispose();
 
     super.dispose();
   }
@@ -233,6 +236,11 @@ class _PlanningRoomState extends State<PlanningRoom> {
         title: Text('Planning Poker ♠️'),
         // Show user's name
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            tooltip: 'Profile',
+            onPressed: _changeProfile,
+          ),
           IconButton(
             icon: const Icon(Icons.share),
             tooltip: 'Share Room Link',
@@ -403,10 +411,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
   }
 
   Widget _buildRevealButton(bool cardsRevealed) {
-    // Optional: Check if current user is the creator if only creator can reveal/reset
-    // final amICreator = _currentRoom?.participants.firstWhereOrNull((p) => p.id == _myParticipantId)?.isCreator ?? false;
-    // if (!amICreator) return const SizedBox.shrink(); // Hide if not creator
-
     // Check if anyone has voted (relevant for enabling reveal)
     final bool someoneVoted =
         _currentRoom?.participants.any((p) => p.vote != null) ?? false;
@@ -504,8 +508,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
                 _buildResultStat(
                     "Consensus",
                     (consensus ?? 0) <= 2.0
-                        ? "($consensus) Yes 👍"
-                        : "($consensus) No 👎"),
+                        ? "(${consensus ?? 'N/A'}) Yes 👍"
+                        : "(${consensus ?? 'N/A'}) No 👎"),
               ],
             ),
             const Divider(height: 20, thickness: 1),
@@ -514,43 +518,46 @@ class _PlanningRoomState extends State<PlanningRoom> {
             const SizedBox(height: 8),
             Wrap(
               // Use Wrap for flexibility with many vote options
-              spacing: 16.0, // Horizontal space
-              runSpacing: 8.0, // Vertical space
+              spacing: 16.0,
+              // Horizontal space
+              runSpacing: 8.0,
+              // Vertical space
               alignment: WrapAlignment.center,
               direction: Axis.horizontal,
               children: sortedVotes.map((entry) {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(entry.value.toString()),
-                  ),
-                  Container(
-                    width: 8*4,
-                    height: 12*4,
-                    decoration: BoxDecoration(
-                        color: Colors.blueGrey.shade50,
-                        border: Border.all(
-                          color: Colors.blueGrey.shade200,
-                          width: 1.5,
-                        ),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
-                            spreadRadius: 1,
-                            blurRadius: 3,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]),
-                    child: Center(
-                      child: Text(entry.key,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 16)),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(entry.value.toString()),
                     ),
-                  ),
-                ],);
+                    Container(
+                      width: 8 * 4,
+                      height: 12 * 4,
+                      decoration: BoxDecoration(
+                          color: Colors.blueGrey.shade50,
+                          border: Border.all(
+                            color: Colors.blueGrey.shade200,
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.2),
+                              spreadRadius: 1,
+                              blurRadius: 3,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]),
+                      child: Center(
+                        child: Text(entry.key,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16)),
+                      ),
+                    ),
+                  ],
+                );
               }).toList(),
             ),
           ],
@@ -578,7 +585,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
       ],
     );
   }
-
 
   Widget _buildVotingCards(List<String> cardValues, bool cardsRevealed) {
     // This function remains largely the same, but check the height/constraints
@@ -781,6 +787,62 @@ class _PlanningRoomState extends State<PlanningRoom> {
       print("Presence already set up for $_myParticipantId.");
     } else {
       print("Cannot set up presence yet, participant ID is missing.");
+    }
+  }
+
+  void _changeProfile() {
+    _nameController.text = _myUserName;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit your profile'),
+        content: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Change your name'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Enter Your Name',
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty || value.trim().isEmpty) {
+                    return 'Please a valid name';
+                  }
+                  return null;
+                },
+                onFieldSubmitted: (value) => _saveProfile(context),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () async => await _saveProfile(context),
+            child: const Text("Save"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _saveProfile(BuildContext context) async {
+    {
+      if (_formKey.currentState!.validate()) {
+        setState(() {
+          _myUserName = _nameController.text.trim();
+        });
+        await _firebaseService.updateParticipantName(
+          widget.roomId,
+          _myParticipantId,
+          _nameController.text.trim(),
+        );
+        Navigator.pop(context);
+      }
     }
   }
 }

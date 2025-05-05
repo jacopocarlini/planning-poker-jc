@@ -43,7 +43,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   ),
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
+                      return 'Please a valid name';
                     }
                     return null;
                   },

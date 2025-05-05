@@ -48,7 +48,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please enter your name';
+                          return 'Please a valid name';
                         }
                         return null;
                       },

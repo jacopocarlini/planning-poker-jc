@@ -35,7 +35,7 @@ class RealtimeFirebaseService {
 
   // Create a new room
   Future<Room> createRoom({required String creatorName}) async {
-    print("Creating real Firebase room for $creatorName (Open Access)...");
+    print("Creating real Firebase room for $creatorName...");
 
     final creatorId = _generateUserId(); // ID casuale per il creatore
     final creator =
@@ -43,9 +43,6 @@ class RealtimeFirebaseService {
 
     final newRoomRef = _roomsRef.push(); // Firebase genera l'ID della stanza
     final roomId = newRoomRef.key!;
-    if (roomId == null) {
-      throw Exception("Failed to generate Room ID from Firebase.");
-    }
 
     final newRoom = Room(
       id: roomId,
@@ -55,7 +52,7 @@ class RealtimeFirebaseService {
 
     try {
       await newRoomRef.set(newRoom.toJsonForDb());
-      print("Real Firebase Room created: $roomId (Open Access)");
+      print("Real Firebase Room created: $roomId");
       return newRoom;
     } catch (e) {
       print("Error creating room $roomId: $e");
@@ -67,29 +64,15 @@ class RealtimeFirebaseService {
   Future<Room?> joinRoom(
       {required String roomId, required String participantName}) async {
     print(
-        "Attempting to join real Firebase room $roomId as $participantName (Open Access)...");
+        "Attempting to join real Firebase room $roomId as $participantName...");
     final roomRef = _getRoomRef(roomId);
 
     try {
       // Controlla se la stanza esiste prima di tentare un'operazione complessa
       final snapshot = await roomRef.get();
       if (!snapshot.exists) {
-        print("Real Firebase Room $roomId not found (Open Access)");
+        print("Real Firebase Room $roomId not found");
         return null;
-      }
-
-      // Verifica nome duplicato (opzionale, ma buona pratica anche in modalità aperta)
-      final currentRoomData = snapshot.value;
-      if (currentRoomData is Map) {
-        final participantsMap = (currentRoomData['participants'] as Map?) ?? {};
-        final nameExists = participantsMap.values
-            .any((pData) => pData is Map && pData['name'] == participantName);
-        if (nameExists) {
-          print(
-              "Participant name '$participantName' already exists in real room $roomId (Open Access)");
-          throw Exception(
-              "Name '$participantName' already taken in this room.");
-        }
       }
 
       final participantId = _generateUserId(); // Nuovo ID casuale
@@ -109,7 +92,7 @@ class RealtimeFirebaseService {
         return null; // Stanza eliminata nel frattempo?
 
       print(
-          "$participantName ($participantId) joined real room $roomId (Open Access)");
+          "$participantName ($participantId) joined real room $roomId");
       return Room.fromSnapshot(updatedSnapshot); // Ritorna la stanza aggiornata
     } catch (e) {
       print("Error joining room $roomId: $e");
@@ -123,21 +106,21 @@ class RealtimeFirebaseService {
 
   // Get a stream of room updates
   Stream<Room> getRoomStream(String roomId) {
-    print("Subscribing to real Firebase stream for room $roomId (Open Access)");
+    print("Subscribing to real Firebase stream for room $roomId");
     final roomRef = _getRoomRef(roomId);
 
     return roomRef.onValue.map((event) {
       final snapshot = event.snapshot;
       if (!snapshot.exists || snapshot.value == null) {
         print(
-            "Snapshot for room $roomId doesn't exist or is null in stream (Open Access).");
+            "Snapshot for room $roomId doesn't exist or is null in stream.");
         throw Exception("Room $roomId not found or has been deleted.");
       }
       try {
         // Deserializza i dati, gestendo potenziali errori di formato
         return Room.fromSnapshot(snapshot);
       } catch (e, stacktrace) {
-        print("Error deserializing room $roomId from stream (Open Access): $e");
+        print("Error deserializing room $roomId from stream: $e");
         print(stacktrace);
         // Lancia un errore specifico per indicare problemi di dati
         throw Exception(
@@ -145,7 +128,7 @@ class RealtimeFirebaseService {
       }
     }).handleError((error) {
       // Logga errori dallo stream stesso (es. problemi di permesso se le regole cambiano)
-      print("Error in Firebase stream for room $roomId (Open Access): $error");
+      print("Error in Firebase stream for room $roomId: $error");
       // Puoi decidere se rilanciare l'errore o gestirlo diversamente
       // Rilanciare è spesso meglio per far sapere alla UI che c'è un problema
       throw error;
@@ -158,7 +141,7 @@ class RealtimeFirebaseService {
       required String participantId,
       required String? vote}) async {
     print(
-        "Submitting real vote '$vote' for $participantId in room $roomId (Open Access)...");
+        "Submitting real vote '$vote' for $participantId in room $roomId...");
     // Riferimento diretto al campo 'vote' di quel partecipante
     final voteRef =
         _getRoomRef(roomId).child('participants/$participantId/vote');
@@ -166,7 +149,7 @@ class RealtimeFirebaseService {
     try {
       // Scrive il voto (o null per cancellare). Nessun controllo su chi lo fa.
       await voteRef.set(vote);
-      print("Real vote submitted for $participantId in $roomId (Open Access)");
+      print("Real vote submitted for $participantId in $roomId");
     } catch (e) {
       print("Error submitting vote for $participantId in $roomId: $e");
       throw Exception("Database error submitting vote: $e");
@@ -175,12 +158,12 @@ class RealtimeFirebaseService {
 
   // Reveal all cards in the room
   Future<void> revealCards({required String roomId}) async {
-    print("Revealing real cards in room $roomId (Open Access)...");
+    print("Revealing real cards in room $roomId...");
     final revealRef = _getRoomRef(roomId).child('areCardsRevealed');
     try {
       // Imposta a true. Chiunque può farlo.
       await revealRef.set(true);
-      print("Real cards revealed in $roomId (Open Access)");
+      print("Real cards revealed in $roomId");
     } catch (e) {
       print("Error revealing cards in $roomId: $e");
       throw Exception("Database error revealing cards: $e");
@@ -189,7 +172,7 @@ class RealtimeFirebaseService {
 
   // Reset voting (hide cards, clear votes)
   Future<void> resetVoting({required String roomId}) async {
-    print("Resetting real voting in room $roomId (Open Access)...");
+    print("Resetting real voting in room $roomId...");
     final roomRef = _getRoomRef(roomId);
 
     try {
@@ -216,7 +199,7 @@ class RealtimeFirebaseService {
       if (updates.isNotEmpty) {
         // Esegui solo se ci sono aggiornamenti da fare
         await roomRef.update(updates);
-        print("Real voting reset in $roomId (Open Access)");
+        print("Real voting reset in $roomId");
       } else {
         print("No updates to perform for reset in $roomId.");
       }
@@ -229,13 +212,13 @@ class RealtimeFirebaseService {
   // Update the card set for the room
   Future<void> updateCardSet(
       {required String roomId, required List<String> newCardValues}) async {
-    print("Updating real card set for room $roomId (Open Access)...");
+    print("Updating real card set for room $roomId...");
     final cardsRef = _getRoomRef(roomId).child('cardValues');
 
     try {
       // Scrive la nuova lista di carte. Chiunque può farlo.
       await cardsRef.set(newCardValues);
-      print("Real card set updated for $roomId (Open Access)");
+      print("Real card set updated for $roomId");
       // Non resetta automaticamente i voti qui, l'azione è separata.
     } catch (e) {
       print("Error updating card set for $roomId: $e");
@@ -378,6 +361,41 @@ class RealtimeFirebaseService {
       print("An error occurred during the empty room cleanup process: $e");
       // Potresti voler rilanciare l'errore o gestirlo diversamente
       return deletedCount; // Restituisce il conteggio delle stanze eliminate fino all'errore
+    }
+  }
+
+  Future<void> updateParticipantName(String roomId, String participantId, String newName) async {
+    if (roomId.isEmpty) {
+      print("Error: Cannot update participant name with empty roomId.");
+      throw ArgumentError("Room ID cannot be empty.");
+    }
+    if (participantId.isEmpty) {
+      print("Error: Cannot update participant name with empty participantId.");
+      throw ArgumentError("Participant ID cannot be empty.");
+    }
+    final trimmedNewName = newName.trim(); // Rimuovi spazi bianchi iniziali/finali
+    if (trimmedNewName.isEmpty) {
+      print("Error: Cannot update participant name to an empty string.");
+      throw ArgumentError("New name cannot be empty or just whitespace.");
+    }
+
+    print("Attempting to update participant $participantId in room $roomId to name '$trimmedNewName'...");
+
+    // 2. Riferimento al campo 'name' specifico del partecipante
+    final DatabaseReference participantNameRef =
+    _getRoomRef(roomId).child('participants/$participantId/name');
+
+    try {
+      // 3. Esegui l'aggiornamento usando set() sul riferimento specifico del nome
+      // Questo sovrascrive solo il valore del campo 'name'.
+      await participantNameRef.set(trimmedNewName);
+      print("Successfully updated name for participant $participantId in room $roomId.");
+
+
+    } catch (e) {
+      print("Error updating name for participant $participantId in room $roomId: $e");
+      // Rilancia l'eccezione per farla gestire dal chiamante (es. UI)
+      throw Exception("Database error updating participant name: $e");
     }
   }
 }
