@@ -1,6 +1,7 @@
 // --- Join Room Page ---
 import 'package:flutter/material.dart';
 import 'package:poker_planning/services/firebase_service.dart';
+import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
 
 class JoinRoomPage extends StatefulWidget {
@@ -14,6 +15,7 @@ class JoinRoomPage extends StatefulWidget {
 
 class _JoinRoomPageState extends State<JoinRoomPage> {
   final TextEditingController _nameController = TextEditingController();
+  final _prefsService = UserPreferencesService();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
@@ -88,6 +90,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
       final navigator = Navigator.of(context);
       final messenger = ScaffoldMessenger.of(context);
       final name = _nameController.text.trim();
+      await _prefsService.saveUsername(name);
 
       try {
         final room = await firebaseService.joinRoom(
