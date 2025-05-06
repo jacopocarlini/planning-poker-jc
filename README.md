@@ -20,7 +20,10 @@ This tool helps Agile teams estimate tasks collaboratively by allowing participa
 
 [Access the live application here](https://poker-planning-jc.web.app)
 
-<img width="1400" alt="image" src="https://github.com/user-attachments/assets/5baa43f9-e451-490f-9bf9-a8e861120ad0" />
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/404843a1-28b9-41ad-a393-d89b7962d397" />
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/6aad7299-9a04-454f-acc5-161655c878be" />
+
+
 
 
 
