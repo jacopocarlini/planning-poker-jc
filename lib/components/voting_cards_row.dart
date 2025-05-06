@@ -40,10 +40,7 @@ class VotingCardsRow extends StatelessWidget {
                 onTap: canVote ? () => onVoteSelected(value) : null,
                 child: Opacity(
                   opacity: canVote ? 1.0 : 0.6,
-                  child: Tooltip(
-                    message: "Vote: $value",
-                    child: buildContainer(isSelected, value),
-                  ),
+                  child: buildContainer(isSelected, value),
                 ),
               ),
             );

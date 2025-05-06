@@ -64,9 +64,6 @@ class ShareRoomDialogContent extends StatelessWidget {
         const Text('Share this link with your team to join:'),
         const SizedBox(height: 16),
         _buildShareItem(context, 'Room Link:', roomUrl),
-        const SizedBox(height: 12),
-        Text('Or they can enter Room ID:', style: Theme.of(context).textTheme.bodySmall),
-        _buildShareItem(context, 'Room ID:', roomId),
       ],
     );
   }
