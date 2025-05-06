@@ -188,11 +188,17 @@ class _ParticipantCardState extends State<ParticipantCard> {
         );
       } else {
         // 4. Non Votato e Rivelato: Punto interrogativo
+        cardDecoration = BoxDecoration(
+          color: Colors.grey.shade200,
+          border: commonBorder,
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: commonBoxShadow,
+        );
         cardContent = Center(
           child: Icon(
-            Icons.question_mark,
-            size: 40,
-            color: Colors.grey.shade400,
+            Icons.hourglass_bottom_rounded,
+            size: 30,
+            color: Colors.grey.shade200,
           ),
         );
       }
