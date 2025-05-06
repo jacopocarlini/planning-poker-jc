@@ -42,7 +42,6 @@ class _UserProfileChipState extends State<UserProfileChip> {
         });
       }
     } catch (e) {
-      print("Error loading username for chip: $e");
       if (mounted) {
         setState(() =>
             _isLoading = false); // Smetti di caricare anche in caso di errore

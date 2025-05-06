@@ -223,7 +223,6 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
       } catch (e) {
         // Fallback se firstWhere fallisce (es. nome duplicato o logica imperfetta)
         // Questo fallback è rischioso, cerca una soluzione migliore se possibile
-        print("Warning: Could not reliably find participant ID by name. Using last participant. $e");
         if (room.participants.isNotEmpty) {
           participantId = room.participants.last.id;
         }
@@ -256,7 +255,6 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
       // Non resettare isLoading qui perché stiamo navigando via
 
     } catch (e) {
-      print("Error joining room: $e"); // Logga l'errore per debug
       // Controlla se il widget è ancora montato prima di mostrare SnackBar/aggiornare state
       if (!mounted) return;
       setState(() {

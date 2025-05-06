@@ -32,6 +32,7 @@ const Color lightBlue = Color(0xFF5D9FEC);
 const Color lightGreyBackground = Color(0xFFF8F9FA); // Very light main background
 const Color cardWhite = Colors.white;
 const Color darkText = Color(0xFF4A4A4A); // Dark grey for text
+const Color lightGrey = Color(0xFFB1B1B1); // Lighter grey for timestamps etc.
 const Color secondaryText = Color(0xFF9B9B9B); // Lighter grey for timestamps etc.
 const Color accentYellow = Color(0xFFF8B64C); // Yellow for progress bars/highlights
 const Color accentOrange = Color(0xFFF5A623); // Orange for 'NEW' tags (or use a brighter one)

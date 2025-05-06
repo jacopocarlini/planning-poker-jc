@@ -38,8 +38,6 @@ class Room {
 
     // Gestione del caso in cui value sia null o non sia una mappa
     if (value == null || value is! Map) {
-      // Potresti lanciare un'eccezione specifica o restituire una Room 'vuota' o di default
-      print("Warning: Room data for $roomId is null or not a Map. Value: $value");
       // In questo caso, lanciamo un'eccezione perché una stanza valida DEVE essere una mappa
       throw FormatException("Invalid data format for room $roomId. Expected a Map.");
     }
@@ -59,12 +57,10 @@ class Room {
         try {
           return Participant.fromJson(participantData);
         } catch (e) {
-          print("Error parsing participant $participantId in room $roomId: $e. Data: $participantData");
           // Salta questo partecipante o crea un partecipante di default
           return Participant(id: participantId, name: "Error Parsing", isCreator: false);
         }
       } else {
-        print("Warning: Invalid data for participant $participantId in room $roomId. Value: $participantValue");
         // Salta questo partecipante o crea un partecipante di default
         return Participant(id: participantId, name: "Invalid Data", isCreator: false);
       }

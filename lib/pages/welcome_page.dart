@@ -56,7 +56,6 @@ class _WelcomePageState extends State<WelcomePage> {
   Future<void> _launchUrl(String url) async {
     final Uri uri = Uri.parse(url);
     if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
-      print('Could not launch $url');
       // Opzionale: mostra un messaggio all'utente se il link non funziona
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

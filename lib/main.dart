@@ -44,7 +44,6 @@ class PokerPlanningApp extends StatelessWidget {
       initialRoute: '/',
       onGenerateRoute: (settings) {
         final uri = Uri.parse(settings.name ?? '/');
-        print("Navigating to: ${uri.path}, segments: ${uri.pathSegments}");
 
         if (uri.pathSegments.isEmpty || uri.path == '/') {
           return MaterialPageRoute(

@@ -4,6 +4,7 @@ import 'dart:math'; // Needed for min/max
 
 import 'package:collection/collection.dart'; // Import for firstWhereOrNull
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/participant_card.dart';
 import 'package:poker_planning/components/user_profile_chip.dart';
 import 'package:poker_planning/config/theme.dart';
 import 'package:poker_planning/models/participant.dart';
@@ -11,7 +12,6 @@ import 'package:poker_planning/models/room.dart';
 import 'package:poker_planning/services/firebase_service.dart';
 import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
-
 
 // --- Planning Room Widget ---
 class PlanningRoom extends StatefulWidget {
@@ -50,9 +50,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _myParticipantId = widget.currentParticipantId;
     _myUserName = widget.currentUserName;
 
-    print(
-        "PlanningRoom initState: roomId=${widget.roomId}, participantId=$_myParticipantId, userName=$_myUserName");
-
     _subscribeToRoomUpdates();
     _setupPresenceIfNeeded();
     _updatePageUrlIfNeeded();
@@ -61,49 +58,109 @@ class _PlanningRoomState extends State<PlanningRoom> {
   void _subscribeToRoomUpdates() {
     if (_roomSubscription != null) return;
 
-    print("Subscribing to room ${widget.roomId}");
     setState(() {
       _isLoading = true;
     });
 
     _roomSubscription =
-        _firebaseService.getRoomStream(widget.roomId).listen((room) {
-      if (!mounted) return;
-      print(
-          "Received room update: Participants=${room.participants.length}, Revealed=${room.areCardsRevealed}");
+        _firebaseService.getRoomStream(widget.roomId).listen((room) async {
+      // Rendi la callback async
+      if (!mounted)
+        return; // Controllo standard se il widget è ancora "montato"
+
+      // --- CONTROLLO SE SONO STATO KICKATO ---
+      final bool amIStillInRoom =
+          room.participants.any((p) => p.id == _myParticipantId);
+
+      if (!amIStillInRoom) {
+        // Non sono più nella lista dei partecipanti!
+        print(
+            "User $_myParticipantId detected removal from room ${widget.roomId}. Navigating back.");
+
+        // Mostra un messaggio (opzionale ma consigliato)
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have been removed from the room.'),
+            backgroundColor: Colors.orangeAccent,
+            // Usa un colore distintivo
+            duration: Duration(seconds: 3), // Durata del messaggio
+          ),
+        );
+
+        // Annulla l'iscrizione allo stream PRIMA di navigare via
+        await _roomSubscription?.cancel();
+        _roomSubscription = null;
+
+        // Naviga indietro alla schermata precedente
+        // Aggiungi un controllo 'mounted' di nuovo per sicurezza dopo l'await potenziale dello snackbar
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+
+        // IMPORTANTE: Esci dalla callback qui, non fare setState
+        return;
+      }
+      // --- FINE CONTROLLO KICK ---
+
+      // Se sono ancora nella stanza, procedi con l'aggiornamento normale
       setState(() {
         _currentRoom = room;
+        // Aggiorna il voto selezionato solo se le carte non sono rivelate
         if (!room.areCardsRevealed) {
-          // Try finding participant safely
+          // Cerca il partecipante corrente nella lista aggiornata
           final me = room.participants
               .firstWhereOrNull((p) => p.id == _myParticipantId);
+          // Aggiorna il voto locale con quello dal DB (potrebbe essere null)
           _selectedVote = me?.vote;
+        } else {
+          // Se le carte sono rivelate, potresti voler resettare il voto locale
+          // se il flusso è reset -> rivela (anche se _resetVoting lo fa già)
+          _selectedVote = room.participants
+              .firstWhereOrNull((p) => p.id == _myParticipantId)
+              ?.vote;
         }
-        _isLoading = false;
+        _isLoading = false; // Aggiorna lo stato di caricamento
       });
     }, onError: (error) {
-      print("Error in room stream: $error");
       if (!mounted) return;
+      print(
+          "Error in room stream for ${widget.roomId}: $error"); // Logga l'errore
       setState(() {
         _isLoading = false;
+        // Potresti voler resettare _currentRoom a null qui o mostrare un errore persistente
+        _currentRoom = null; // Indica che non possiamo più caricare la stanza
       });
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error receiving room updates: $error'),
+          content: Text('Error loading room: $error. You might need to leave.'),
+          // Messaggio migliorato
           backgroundColor: Colors.red));
+
+      // Potresti anche decidere di far uscire l'utente in caso di certi errori
+      // if (error is SomeSpecificFirebaseErrorIndicatingRoomDeleted) {
+      //    Navigator.of(context).pop();
+      // }
     }, onDone: () {
-      print("Room stream closed for ${widget.roomId}");
+      if (!mounted) return;
+      print("Room stream for ${widget.roomId} closed.");
+      // Lo stream è terminato (potrebbe succedere se la stanza viene eliminata?)
+      // Potresti voler far uscire l'utente anche qui.
+      if (ModalRoute.of(context)?.isCurrent ?? false) {
+        // Naviga solo se questa è la rotta corrente
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Connection to the room closed.'),
+            backgroundColor: Colors.grey));
+        Navigator.of(context).pop();
+      }
     });
   }
 
   void _updatePageUrlIfNeeded() {
     if (_myParticipantId.isEmpty) {
-      print("Skipping URL update, participant ID not confirmed yet.");
       return; // Don't update URL until join is confirmed
     }
     final currentPath = html.window.location.pathname ?? '';
     final targetPath = '/room/${widget.roomId}';
     if (currentPath != targetPath) {
-      print("Updating URL from $currentPath to $targetPath");
       html.window.history
           .pushState(null, 'Poker Planning Room ${widget.roomId}', targetPath);
     }
@@ -111,8 +168,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
   @override
   void dispose() {
-    print(
-        "Disposing PlanningRoom for ${widget.roomId}. Participant: $_myParticipantId");
     _firebaseService.removeParticipant(widget.roomId, _myParticipantId);
     _roomSubscription?.cancel();
     _roomSubscription = null;
@@ -245,7 +300,9 @@ class _PlanningRoomState extends State<PlanningRoom> {
             tooltip: 'Share Room Link',
             onPressed: _showShareDialog,
           ),
-          // Add other actions if needed
+          SizedBox(
+            width: 20,
+          )
         ],
       ),
       body: Padding(
@@ -283,125 +340,52 @@ class _PlanningRoomState extends State<PlanningRoom> {
     if (participants.isEmpty) {
       return const Center(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40.0), // Add padding
+          padding: EdgeInsets.symmetric(vertical: 40.0),
           child: Text("No participants yet. Share the link!"),
         ),
       );
     }
+
+    // Determine if the current user is the creator ONCE here
+    final bool amICreator = _myParticipantId == _currentRoom?.creatorId;
+
     return Column(
       children: [
         Text(
           'Team Members: ${participants.length}',
-          style: Theme.of(context).textTheme.titleLarge, // Use TitleLarge
+          style: Theme.of(context).textTheme.titleLarge,
         ),
         const SizedBox(height: 24),
         Center(
           child: LayoutBuilder(builder: (context, constraints) {
-            int crossAxisCount = (constraints.maxWidth / 160)
-                .floor()
-                .clamp(2, 6); // Adjust width slightly
+            int crossAxisCount =
+                (constraints.maxWidth / 160).floor().clamp(2, 6);
             return GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                childAspectRatio: 0.65, // Adjusted aspect ratio
+                childAspectRatio: 0.65,
+                // Might need slight adjustment due to Stack/Button
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
               ),
               itemCount: participants.length,
               itemBuilder: (context, index) {
                 final participant = participants[index];
-                return _buildParticipantCard(participant, cardsRevealed);
+                // Use the new ParticipantCard widget
+                return ParticipantCard(
+                  // Use a ValueKey to help Flutter identify stateful widgets correctly
+                  key: ValueKey(participant.id),
+                  participant: participant,
+                  cardsRevealed: cardsRevealed,
+                  isMe: participant.id == _myParticipantId,
+                  onKick:
+                      _showKickConfirmationDialog, // Pass the function reference
+                );
               },
             );
           }),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildParticipantCard(Participant participant, bool cardsRevealed) {
-    final vote = participant.vote;
-    final hasVoted =
-        vote != null && vote.isNotEmpty; // Check for empty string too
-    final isMe = participant.id == _myParticipantId;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 80,
-          height: 120,
-          decoration: BoxDecoration(
-              color: Colors.blueGrey.shade50, // Slightly different background
-              border: Border.all(
-                color: isMe ? primaryBlue : Colors.blueGrey.shade200,
-                width: isMe ? 2.5 : 1.5, // Thicker border for 'me'
-              ),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.2),
-                  spreadRadius: 1,
-                  blurRadius: 3,
-                  offset: const Offset(0, 2),
-                ),
-              ]),
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              // Revealed State
-              if (cardsRevealed)
-                hasVoted
-                    ? Text(
-                        vote!,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey.shade800,
-                        ),
-                      )
-                    : Icon(Icons.question_mark,
-                        size: 40, color: Colors.grey.shade400),
-              // Question mark if not voted
-
-              // Hidden State
-              if (!cardsRevealed)
-                hasVoted
-                    ? Center(
-                        // Center the checkmark
-                        child: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.9),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.green.shade500, width: 1.5)),
-                          child: Icon(Icons.check, // Simpler check icon
-                              color: Colors.green.shade600,
-                              size: 28),
-                        ),
-                      )
-                    : Icon(Icons.hourglass_empty,
-                        size: 30, color: Colors.blueGrey.shade300),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0), // Add padding
-          child: Text(
-            participant.name + (isMe ? ' (You)' : ''),
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1, // Ensure single line
-            style: TextStyle(
-              fontWeight: isMe ? FontWeight.bold : FontWeight.normal,
-              fontSize: 14,
-              color: Colors.black87, // Dim text if offline
-            ),
-          ),
         ),
       ],
     );
@@ -496,7 +480,11 @@ class _PlanningRoomState extends State<PlanningRoom> {
           children: [
             Text('Voting Results',
                 style: Theme.of(context).textTheme.headlineSmall),
-            const Divider(height: 20, thickness: 1),
+            const Divider(
+              height: 20,
+              thickness: 1,
+              color: lightGrey,
+            ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -509,7 +497,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                         : "(${consensus ?? 'N/A'}) No 👎"),
               ],
             ),
-            const Divider(height: 20, thickness: 1),
+            const Divider(height: 20, thickness: 1, color: lightGrey,),
             Text('Vote Summary:',
                 style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
@@ -774,56 +762,10 @@ class _PlanningRoomState extends State<PlanningRoom> {
   // Helper method to setup presence only once we have the ID
   void _setupPresenceIfNeeded() {
     if (_myParticipantId.isNotEmpty && !_presenceSetupDone) {
-      print(
-          "Setting up presence for participant: $_myParticipantId in room ${widget.roomId}");
       _firebaseService.setupPresence(widget.roomId, _myParticipantId);
       _presenceSetupDone = true; // Mark as done
-    } else if (_presenceSetupDone) {
-      print("Presence already set up for $_myParticipantId.");
-    } else {
-      print("Cannot set up presence yet, participant ID is missing.");
     }
   }
-
-  // void _changeProfile() {
-  //   _nameController.text = _myUserName;
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('Edit your profile'),
-  //       content: Form(
-  //         key: _formKey,
-  //         child: Column(
-  //           mainAxisSize: MainAxisSize.min,
-  //           crossAxisAlignment: CrossAxisAlignment.start,
-  //           children: [
-  //             const Text('Change your name'),
-  //             const SizedBox(height: 16),
-  //             TextFormField(
-  //               controller: _nameController,
-  //               decoration: const InputDecoration(
-  //                 labelText: 'Enter Your Name',
-  //               ),
-  //               validator: (value) {
-  //                 if (value == null || value.isEmpty || value.trim().isEmpty) {
-  //                   return 'Please enter a valid name';
-  //                 }
-  //                 return null;
-  //               },
-  //               onFieldSubmitted: (value) => _saveProfile(context),
-  //             ),
-  //           ],
-  //         ),
-  //       ),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () async => await _saveProfile(),
-  //           child: const Text("Save"),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 
   Future<void> _saveProfile() async {
     {
@@ -836,6 +778,65 @@ class _PlanningRoomState extends State<PlanningRoom> {
         _myParticipantId,
         userName,
       );
+    }
+  }
+
+  // Add this method inside _PlanningRoomState
+
+  Future<void> _showKickConfirmationDialog(
+      String participantIdToKick, String participantName) async {
+    // Prevent kicking yourself (should be handled by UI, but double-check)
+    if (participantIdToKick == _myParticipantId) return;
+
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Confirm Kick'),
+          content: Text(
+              'Are you sure you want to remove "$participantName" from the room?'),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop(false); // Return false
+              },
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Kick'),
+              onPressed: () {
+                Navigator.of(context).pop(true); // Return true
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    // If the user confirmed in the dialog
+    if (confirmed == true) {
+      await _kickParticipant(participantIdToKick);
+    }
+  }
+
+  // Actual function to call Firebase service
+  Future<void> _kickParticipant(String participantIdToKick) async {
+    final messenger = ScaffoldMessenger.of(context);
+    print(
+        'Kicking participant $participantIdToKick from room ${widget.roomId}');
+    try {
+      // Use the existing removeParticipant method from your service
+      await _firebaseService.removeParticipant(
+          widget.roomId, participantIdToKick);
+      messenger.showSnackBar(SnackBar(
+          content: Text('Participant removed successfully.'),
+          backgroundColor: Colors.green));
+    } catch (e) {
+      print("Error kicking participant $participantIdToKick: $e");
+      messenger.showSnackBar(SnackBar(
+          content: Text('Failed to remove participant: $e'),
+          backgroundColor: Colors.red));
     }
   }
 }
