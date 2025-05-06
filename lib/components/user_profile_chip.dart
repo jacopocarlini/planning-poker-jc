@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:poker_planning/services/firebase_service.dart';
 import 'package:poker_planning/services/user_preferences_service.dart';
-import 'package:provider/provider.dart';
 
 class UserProfileChip extends StatefulWidget {
   final VoidCallback? onTap; // Azione da eseguire al tap
@@ -21,13 +19,10 @@ class _UserProfileChipState extends State<UserProfileChip> {
   bool _isLoading = true;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
-  late RealtimeFirebaseService _firebaseService;
 
   @override
   void initState() {
     super.initState();
-    _firebaseService =
-        Provider.of<RealtimeFirebaseService>(context, listen: false);
     _loadUsername();
   }
 
@@ -84,14 +79,15 @@ class _UserProfileChipState extends State<UserProfileChip> {
       padding: const EdgeInsets.all(6.0),
       child: InkWell(
         onTap: () async {
-          await _changeProfile();
-        }, // Usa la callback passata al widget
-        borderRadius: BorderRadius.circular(20), // Rende l'effetto ripple rotondo
+          await _changeProfile(context);
+        },
+        // Usa la callback passata al widget
+        borderRadius: BorderRadius.circular(20),
+        // Rende l'effetto ripple rotondo
         child: Padding(
           padding: const EdgeInsets.all(6.0),
-          child: Row(
-            children: [
-             CircleAvatar(
+          child: Row(children: [
+            CircleAvatar(
               // Puoi personalizzare il colore o usare un'immagine se disponibile
               backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
               child: Text(
@@ -102,23 +98,25 @@ class _UserProfileChipState extends State<UserProfileChip> {
                 ),
               ),
             ),
-             Text(
-              _username ?? 'Guest', // Mostra 'Guest' se il nome non è disponibile
+            Text(
+              _username ?? 'Guest',
+              // Mostra 'Guest' se il nome non è disponibile
               style: const TextStyle(fontWeight: FontWeight.w500),
-            ),]
-            // Puoi aggiungere altre personalizzazioni al Chip qui
-            // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          ),
+            ),
+          ]
+              // Puoi aggiungere altre personalizzazioni al Chip qui
+              // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
         ),
       ),
     );
   }
 
-  Future<void> _changeProfile() async {
+  Future<void> _changeProfile(context) async {
     _nameController.text = await _prefsService.getUsername() ?? "Unknown";
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Edit your profile'),
         content: Form(
           key: _formKey,
@@ -140,14 +138,7 @@ class _UserProfileChipState extends State<UserProfileChip> {
                   return null;
                 },
                 onFieldSubmitted: (value) async {
-                  if (_formKey.currentState!.validate()) {
-                    await _prefsService.saveUsername(_nameController.text.trim());
-                    if (widget.onTap != null) {
-                      widget.onTap!();
-                    }
-                    await _loadUsername();
-                    Navigator.pop(context);
-                  }
+                  await _handleSave(dialogContext);
                 },
               ),
             ],
@@ -156,19 +147,23 @@ class _UserProfileChipState extends State<UserProfileChip> {
         actions: [
           TextButton(
             onPressed: () async {
-              if (_formKey.currentState!.validate()) {
-                await _prefsService.saveUsername(_nameController.text.trim());
-                if (widget.onTap != null) {
-                  widget.onTap!();
-                }
-                await _loadUsername();
-                Navigator.pop(context);
-              }
+              await _handleSave(dialogContext);
             },
             child: const Text("Save"),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _handleSave(BuildContext dialogContext) async {
+    if (_formKey.currentState!.validate()) {
+      await _prefsService.saveUsername(_nameController.text.trim());
+      if (widget.onTap != null) {
+        widget.onTap!();
+      }
+      await _loadUsername();
+      Navigator.pop(dialogContext);
+    }
   }
 }

@@ -26,12 +26,19 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
+
   // Stato per memorizzare il nome del set di carte selezionato
   String _selectedCardSetName = availableCardSets.keys.first; // Default al primo set
   final _prefsService = UserPreferencesService(); // Istanza del servizio prefs
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Planning Poker ♠️'),
@@ -105,13 +112,15 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 const SizedBox(height: 24),
                 _isLoading
                     ? const CircularProgressIndicator()
-                    : ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(50),
-                  ),
-                  onPressed: _createRoom,
-                  child: const Text('Create Room'),
-                ),
+                    : Container(
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                                        ),
+                                        onPressed: _createRoom,
+                                        child: const Text('Create Room'),
+                                      ),
+                    ),
               ],
             ),
           ),

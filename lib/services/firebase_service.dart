@@ -116,7 +116,7 @@ class RealtimeFirebaseService {
       try {
         // Deserializza i dati, gestendo potenziali errori di formato
         return Room.fromSnapshot(snapshot);
-      } catch (e, stacktrace) {
+      } catch (e) {
         // Lancia un errore specifico per indicare problemi di dati
         throw Exception(
             "Failed to parse room data for $roomId. Data might be corrupted.");
@@ -300,11 +300,6 @@ class RealtimeFirebaseService {
             } catch (e) {
               // Continua con le altre stanze anche se una fallisce
             }
-          } else {
-            // Logica opzionale per contare i partecipanti se non è vuota
-            int count = 0;
-            if (participantsData is Map) count = participantsData.length;
-            if (participantsData is List) count = participantsData.length;
           }
         }
       }

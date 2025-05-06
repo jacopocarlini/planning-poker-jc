@@ -18,9 +18,7 @@ class _WelcomePageState extends State<WelcomePage> {
   bool _isLoading = false;
   late Future<bool> _hasUsernameFuture;
 
-  // --- Definisci i percorsi e URL ---
-  final String _logoPath =
-      'assets/logo/logo.png'; // <-- CAMBIA CON IL TUO PATH REALE
+
   final String _githubUrl =
       'https://github.com/jacopocarlini/planning-poker-jc'; // <-- URL REPO
 

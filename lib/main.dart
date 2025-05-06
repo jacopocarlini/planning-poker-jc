@@ -4,7 +4,6 @@ import 'package:poker_planning/config/theme.dart';
 import 'package:poker_planning/pages/create_room_page.dart';
 import 'package:poker_planning/pages/join_room_page.dart';
 import 'package:poker_planning/pages/planning_room_page.dart';
-import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
 
 import 'pages/welcome_page.dart';
