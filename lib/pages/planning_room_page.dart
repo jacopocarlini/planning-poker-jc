@@ -260,9 +260,9 @@ class _PlanningRoomState extends State<PlanningRoom> {
         // Show user's name
         actions: [
           UserProfileChip(onTap: _saveProfile),
-          IconButton(
-            icon: const Icon(Icons.share),
-            tooltip: 'Share Room Link',
+          ElevatedButton.icon(
+            icon: const Icon(Icons.add),
+            label: const Text('Invite Teammates'),
             onPressed: _showShareDialog,
           ),
           const SizedBox(width: 20),
@@ -323,7 +323,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
         content: ShareRoomDialogContent(
           // Usa il widget per il contenuto
-          roomId: widget.roomId,
           roomUrl: roomUrl,
         ),
         actions: [

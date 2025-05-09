@@ -6,8 +6,11 @@ import 'package:poker_planning/pages/join_room_page.dart';
 import 'package:poker_planning/pages/planning_room_page.dart';
 import 'package:provider/provider.dart';
 
+import 'components/vote_results_summary_view.dart';
+import 'models/room.dart';
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
+import 'dart:convert'; // Per jsonDecode, utf8, base64UrlDecode
 
 // --- Entry Point ---
 void main() async {
@@ -70,6 +73,15 @@ class PokerPlanningApp extends StatelessWidget {
               settings: settings,
             );
           }
+        } else if(uri.pathSegments.first == 'result'  &&
+            uri.pathSegments.length > 1){
+          // final arguments = settings.arguments as Map<String, dynamic>?;
+          // final data = arguments?['data'] as String;
+          final data = uri.pathSegments[1];
+          return MaterialPageRoute(
+            builder: (context) => VoteResultsSummaryView(room: roomFromShareableLinkData(data)),
+            settings: settings,
+          );
         }
 
         // Fallback to Landing Page for unknown routes
@@ -77,5 +89,21 @@ class PokerPlanningApp extends StatelessWidget {
             builder: (_) => WelcomePage(), settings: settings);
       },
     );
+  }
+
+  Room roomFromShareableLinkData(String base64Data) {
+
+      // 1. Decodifica da Base64 a stringa JSON
+      final String jsonVotes = utf8.decode(base64Decode(base64Data));
+
+      // 2. Parsa la stringa JSON per ottenere la lista di voti
+      // Il risultato di jsonDecode sarà List<dynamic>, quindi facciamo un cast
+      final List<dynamic> decodedVotesDynamic = jsonDecode(jsonVotes) as List<dynamic>;
+      final List<String> votes = decodedVotesDynamic.map((e) => e.toString()).toList();
+
+
+      // 3. Crea un oggetto Room usando il factory constructor
+      return Room.fromVotesList(votes);
+
   }
 }

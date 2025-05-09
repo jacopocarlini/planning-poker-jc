@@ -10,6 +10,8 @@ const Map<String, List<String>> availableCardSets = {
   'Fibonacci': ['0', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'],
   'Modified Fibonacci': ['0', '0.5', '1', '2', '3', '5', '8', '13', '20', '?', '☕'],
   'T-Shirt Sizes': ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?', '☕'],
+  '1 to 5': ['1', '2', '3', '4', '5'],
+  '1 to 10': ['1', '2', '3', '4', '5' , '6', '7', '8', '9', '10' ],
   // Aggiungi altri set se necessario
 };
 

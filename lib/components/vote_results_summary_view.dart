@@ -1,8 +1,11 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:poker_planning/config/theme.dart'; // Assicurati che il percorso e le variabili siano corretti
 import 'package:poker_planning/models/room.dart'; // Assicurati che il percorso sia corretto
+import 'dart:convert'; // Per jsonEncode, utf8, base64UrlEncode
+import 'dart:html' as html; // Needed for window.history, window.location
 
 class VoteResultsSummaryView extends StatelessWidget {
   final Room room;
@@ -17,13 +20,13 @@ class VoteResultsSummaryView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(label,
-            style: Theme.of(context).textTheme.labelLarge),
+            style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
         Text(value,
             style: Theme.of(context)
                 .textTheme
                 .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold, color: primaryBlue)),
+                ?.copyWith(fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -97,11 +100,21 @@ class VoteResultsSummaryView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Voting Results',
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                IconButton(
+                  icon: Icon(Icons.share), // o Theme.of(context).primaryColor
+                  tooltip: 'Share Results',
+                  onPressed: participantsWhoVoted.isNotEmpty // Disabilita se non ci sono voti
+                      ? () => _showShareDialog(context, room)
+                      : null, // Disabilita il pulsante se non ci sono voti da condividere
+                ),
+              ],
+            ),            Text('Voting Results',
                 style: Theme.of(context)
                     .textTheme
-                    .headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.bold)),
+                    .titleLarge),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -118,11 +131,10 @@ class VoteResultsSummaryView extends StatelessWidget {
                 endIndent: 20,
                 color: lightGrey,
               ),
-              Text('Vote Distribution',
+              Text('Distribution',
                   style: Theme.of(context)
                       .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w500)),
+                      .titleMedium),
               const SizedBox(height: 12),
               Wrap(
                 // Use Wrap for flexibility with many vote options
@@ -184,6 +196,69 @@ class VoteResultsSummaryView extends StatelessWidget {
       ),
     );
   }
+
+  // Funzione per mostrare il dialog di condivisione
+  void _showShareDialog(BuildContext context, Room room) {
+    final String shareableLink = VoteCalculator.generateShareableLink(room);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          title: const Text("Share Result"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Link:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                    color: Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: Colors.grey.shade300)),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        '$shareableLink',
+                        style: TextStyle(color: Colors.blue.shade800, fontSize: 15),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 20),
+                      tooltip: 'Copy to clipboard',
+                      visualDensity: VisualDensity.compact,
+                      onPressed: () {
+                        html.window.navigator.clipboard?.writeText(shareableLink);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('link copied!'),
+                              behavior: SnackBarBehavior.floating,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              margin: const EdgeInsets.all(10),
+                              duration: const Duration(seconds: 2)),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("Chiudi"),
+              onPressed: () {
+                Navigator.of(dialogContext).pop(); // Chiudi il dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class VoteCalculator {
@@ -201,4 +276,31 @@ class VoteCalculator {
     final double variance = sumOfSquaredDifferences / numericVotes.length;
     return sqrt(variance);
   }
+
+  static String generateShareableLink(Room room) {
+    // Estrai solo i voti che non sono null o vuoti, come fa il tuo widget
+    final List<String> votesToShare = room.participants
+        .where((p) => p.vote != null && p.vote!.isNotEmpty)
+        .map((p) => p.vote!)
+        .toList();
+    final baseUrl = '${html.window.location.origin}/result';
+
+
+    if (votesToShare.isEmpty) {
+      // Potresti voler gestire questo caso, magari non generando un link
+      // o generando un link che indica "nessun voto"
+      return "$baseUrl?error=no_votes";
+    }
+
+    // 1. Serializza la lista di voti in JSON
+    final String jsonVotes = jsonEncode(votesToShare);
+
+    // 2. Codifica la stringa JSON in Base64 (URL safe)
+    final String base64Votes = base64UrlEncode(utf8.encode(jsonVotes));
+
+    // 3. Crea il link
+    return "$baseUrl/$base64Votes";
+  }
+
+
 }

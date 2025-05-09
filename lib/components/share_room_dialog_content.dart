@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'dart:html' as html; // Per clipboard
 
 class ShareRoomDialogContent extends StatelessWidget {
-  final String roomId;
   final String roomUrl;
 
   const ShareRoomDialogContent({
     Key? key,
-    required this.roomId,
     required this.roomUrl,
   }) : super(key: key);
 

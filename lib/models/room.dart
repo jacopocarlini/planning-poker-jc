@@ -16,6 +16,13 @@ class Room {
     this.cardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'],
   });
 
+  // Factory constructor per creare una Room solo da una lista di voti
+  factory Room.fromVotesList(List<String> votes) {
+    return Room(
+      participants: votes.map((vote) => Participant(vote: vote, id: '', name: '')).toList(), id: '', creatorId: '',
+    );
+  }
+
   Room copyWith({
     String? id,
     String? creatorId,
