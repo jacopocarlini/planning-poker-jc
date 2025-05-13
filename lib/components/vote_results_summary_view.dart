@@ -1,11 +1,10 @@
+import 'dart:convert'; // Per jsonEncode, utf8, base64UrlEncode
+import 'dart:html' as html; // Needed for window.history, window.location
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:poker_planning/config/theme.dart'; // Assicurati che il percorso e le variabili siano corretti
 import 'package:poker_planning/models/room.dart'; // Assicurati che il percorso sia corretto
-import 'dart:convert'; // Per jsonEncode, utf8, base64UrlEncode
-import 'dart:html' as html; // Needed for window.history, window.location
 
 class VoteResultsSummaryView extends StatelessWidget {
   final Room room;
@@ -19,8 +18,7 @@ class VoteResultsSummaryView extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label,
-            style: Theme.of(context).textTheme.titleMedium),
+        Text(label, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 4),
         Text(value,
             style: Theme.of(context)
@@ -69,11 +67,11 @@ class VoteResultsSummaryView extends StatelessWidget {
     String consensusText = "N/A";
     if (consensusStdDev != null) {
       if (consensusStdDev <= 1.0) {
-        consensusText = "Strong Yes 👍 (${consensusStdDev.toStringAsFixed(1)})";
-      } else if (consensusStdDev <= 2.5) {
-        consensusText = "Yes 👍 (${consensusStdDev.toStringAsFixed(1)})";
+        consensusText = "Strong Yes 👍";
+      } else if (consensusStdDev <= 2) {
+        consensusText = "Yes 👍";
       } else {
-        consensusText = "No 👎 (${consensusStdDev.toStringAsFixed(1)})";
+        consensusText = "No 👎";
       }
     }
 
@@ -101,25 +99,30 @@ class VoteResultsSummaryView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                Container(),
+                Text('Voting Results',
+                    style: Theme.of(context).textTheme.titleLarge),
                 IconButton(
                   icon: Icon(Icons.share), // o Theme.of(context).primaryColor
                   tooltip: 'Share Results',
-                  onPressed: participantsWhoVoted.isNotEmpty // Disabilita se non ci sono voti
+                  onPressed: participantsWhoVoted
+                          .isNotEmpty // Disabilita se non ci sono voti
                       ? () => _showShareDialog(context, room)
                       : null, // Disabilita il pulsante se non ci sono voti da condividere
                 ),
               ],
-            ),            Text('Voting Results',
-                style: Theme.of(context)
-                    .textTheme
-                    .titleLarge),
+            ),
+            const SizedBox(height: 26,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
+                _buildResultStat(context, "Total Voters", numericVotes.length.toString()),
                 _buildResultStat(context, "Average",
                     average != null ? average.toStringAsFixed(1) : "N/A"),
+                _buildResultStat(context, "Standard Deviation",
+                    consensusStdDev?.toStringAsFixed(1) ?? 'N/A'),
                 _buildResultStat(context, "Consensus", consensusText),
               ],
             ),
@@ -132,9 +135,7 @@ class VoteResultsSummaryView extends StatelessWidget {
                 color: lightGrey,
               ),
               Text('Distribution',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleMedium),
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 12),
               Wrap(
                 // Use Wrap for flexibility with many vote options
@@ -210,7 +211,8 @@ class VoteResultsSummaryView extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Link:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const Text('Link:',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
               const SizedBox(height: 4),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -223,7 +225,8 @@ class VoteResultsSummaryView extends StatelessWidget {
                     Expanded(
                       child: SelectableText(
                         '$shareableLink',
-                        style: TextStyle(color: Colors.blue.shade800, fontSize: 15),
+                        style: TextStyle(
+                            color: Colors.blue.shade800, fontSize: 15),
                       ),
                     ),
                     IconButton(
@@ -231,12 +234,14 @@ class VoteResultsSummaryView extends StatelessWidget {
                       tooltip: 'Copy to clipboard',
                       visualDensity: VisualDensity.compact,
                       onPressed: () {
-                        html.window.navigator.clipboard?.writeText(shareableLink);
+                        html.window.navigator.clipboard
+                            ?.writeText(shareableLink);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                               content: Text('link copied!'),
                               behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
                               margin: const EdgeInsets.all(10),
                               duration: const Duration(seconds: 2)),
                         );
@@ -249,9 +254,9 @@ class VoteResultsSummaryView extends StatelessWidget {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text("Chiudi"),
+              child: const Text("Close"),
               onPressed: () {
-                Navigator.of(dialogContext).pop(); // Chiudi il dialog
+                Navigator.of(dialogContext).pop(); // Close il dialog
               },
             ),
           ],
@@ -285,7 +290,6 @@ class VoteCalculator {
         .toList();
     final baseUrl = '${html.window.location.origin}/result';
 
-
     if (votesToShare.isEmpty) {
       // Potresti voler gestire questo caso, magari non generando un link
       // o generando un link che indica "nessun voto"
@@ -301,6 +305,4 @@ class VoteCalculator {
     // 3. Crea il link
     return "$baseUrl/$base64Votes";
   }
-
-
 }
