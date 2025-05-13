@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
+
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/participants_grid_view.dart';
@@ -297,12 +298,15 @@ class _PlanningRoomState extends State<PlanningRoom> {
                     onVoteSelected: _selectVote,
                   ),
                 const SizedBox(height: 20),
-                RevealResetButton(
-                  cardsRevealed: cardsRevealed,
-                  canReveal: canReveal,
-                  canReset: canReset,
-                  onReveal: _revealCards,
-                  onReset: _resetVoting,
+                Align(
+                  widthFactor: 1,
+                  child: RevealResetButton(
+                    cardsRevealed: cardsRevealed,
+                    canReveal: canReveal,
+                    canReset: canReset,
+                    onReveal: _revealCards,
+                    onReset: _resetVoting,
+                  ),
                 ),
                 const SizedBox(height: 20),
               ],
@@ -359,12 +363,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
   Future<void> _showKickConfirmationDialog(
       String participantIdToKick, String participantName) async {
     if (participantIdToKick == _myParticipantId) return;
-    if (_currentRoom?.creatorId != _myParticipantId) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Only the room creator can remove participants.')));
-      return;
-    }
-
     final bool? confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext dialogContext) {

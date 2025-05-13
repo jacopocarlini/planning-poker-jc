@@ -1,3 +1,5 @@
+import 'dart:convert'; // Per jsonDecode, utf8, base64UrlDecode
+
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart'; // Use this for setUrlStrategy
 import 'package:poker_planning/config/theme.dart';
@@ -10,7 +12,6 @@ import 'components/vote_results_summary_view.dart';
 import 'models/room.dart';
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
-import 'dart:convert'; // Per jsonDecode, utf8, base64UrlDecode
 
 // --- Entry Point ---
 void main() async {
@@ -73,13 +74,39 @@ class PokerPlanningApp extends StatelessWidget {
               settings: settings,
             );
           }
-        } else if(uri.pathSegments.first == 'result'  &&
-            uri.pathSegments.length > 1){
+        } else if (uri.pathSegments.first == 'result' &&
+            uri.pathSegments.length > 1) {
           // final arguments = settings.arguments as Map<String, dynamic>?;
           // final data = arguments?['data'] as String;
           final data = uri.pathSegments[1];
           return MaterialPageRoute(
-            builder: (context) => VoteResultsSummaryView(room: roomFromShareableLinkData(data)),
+            builder: (context) => Scaffold(
+                appBar: AppBar(
+                  title: const Text('Planning Poker ♠️'),
+                  automaticallyImplyLeading: false,
+                  actions: [
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/');
+                      },
+                      icon: const Icon(Icons.home),
+                      label: const Text('Home'),
+                    ),
+                    const SizedBox(
+                      width: 20,
+                    )
+                  ],
+                ),
+                body: Center(
+                  child: SizedBox(
+                    width: 1200,
+                    height: 1000,
+                    child: Center(
+                      child: VoteResultsSummaryView(
+                          room: roomFromShareableLinkData(data)),
+                    ),
+                  ),
+                )),
             settings: settings,
           );
         }
@@ -92,18 +119,17 @@ class PokerPlanningApp extends StatelessWidget {
   }
 
   Room roomFromShareableLinkData(String base64Data) {
+    // 1. Decodifica da Base64 a stringa JSON
+    final String jsonVotes = utf8.decode(base64Decode(base64Data));
 
-      // 1. Decodifica da Base64 a stringa JSON
-      final String jsonVotes = utf8.decode(base64Decode(base64Data));
+    // 2. Parsa la stringa JSON per ottenere la lista di voti
+    // Il risultato di jsonDecode sarà List<dynamic>, quindi facciamo un cast
+    final List<dynamic> decodedVotesDynamic =
+        jsonDecode(jsonVotes) as List<dynamic>;
+    final List<String> votes =
+        decodedVotesDynamic.map((e) => e.toString()).toList();
 
-      // 2. Parsa la stringa JSON per ottenere la lista di voti
-      // Il risultato di jsonDecode sarà List<dynamic>, quindi facciamo un cast
-      final List<dynamic> decodedVotesDynamic = jsonDecode(jsonVotes) as List<dynamic>;
-      final List<String> votes = decodedVotesDynamic.map((e) => e.toString()).toList();
-
-
-      // 3. Crea un oggetto Room usando il factory constructor
-      return Room.fromVotesList(votes);
-
+    // 3. Crea un oggetto Room usando il factory constructor
+    return Room.fromVotesList(votes);
   }
 }
