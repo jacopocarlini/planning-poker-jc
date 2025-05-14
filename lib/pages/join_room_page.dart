@@ -20,6 +20,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
   bool _isLoading = false;
   // Flag per evitare chiamate multiple se l'auto-join è in corso
   bool _isAutoJoining = false;
+  bool _isSpectator = false;
 
   @override
   void initState() {
@@ -35,6 +36,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
   Future<void> _checkAndAutoJoin() async {
     // Recupera l'username dalle preferenze
     final String? storedUsername = await _prefsService.getUsername();
+    final bool? isSpectator = await _prefsService.isSpectator();
 
     // Controlla se l'username esiste e non è vuoto e se il widget è ancora montato
     if (storedUsername != null && storedUsername.isNotEmpty && mounted) {
@@ -44,6 +46,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
         _isLoading = true; // Mostra l'indicatore di caricamento
         // Opzionale: Pre-compila il campo di testo per coerenza UX
         _nameController.text = storedUsername;
+        _isSpectator = _isSpectator;
       });
 
       // Chiama la funzione di join passando l'username recuperato
@@ -125,6 +128,21 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
                         },
                       ),
                       const SizedBox(height: 24),
+
+                      Row(children: [
+                        Switch(value: _isSpectator, onChanged: (value){
+                          setState(() {
+                            _isSpectator = value;
+                          });
+                        }),
+
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: const Text("Enter as Spectator"),
+                        ),
+
+                      ],),
+                      const SizedBox(height: 24),
                       _isLoading
                           ? const CircularProgressIndicator()
                           : ElevatedButton(
@@ -191,6 +209,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
       final room = await firebaseService.joinRoom(
         roomId: widget.roomId,
         participantName: participantName,
+        isSpectator: _isSpectator
       );
 
       // 3. Controlla il risultato
@@ -249,6 +268,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
           'roomId': widget.roomId,
           'participantId': participantId,
           'userName': participantName,
+          'isSpectator': _isSpectator,
           // 'isCreator': false, // Passa questo se necessario
         },
       );

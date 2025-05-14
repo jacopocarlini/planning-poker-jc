@@ -27,6 +27,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   final TextEditingController _nameController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  bool _isSpectator = false;
 
 
   // Stato per memorizzare il nome del set di carte selezionato
@@ -63,26 +64,8 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 40),
-                // TextFormField(
-                //   controller: _nameController,
-                //   decoration: const InputDecoration(
-                //     labelText: 'Enter Your Name',
-                //   ),
-                //   validator: (value) {
-                //     if (value == null || value.isEmpty) {
-                //       return 'Please enter a valid name'; // Messaggio corretto
-                //     }
-                //     return null;
-                //   },
-                //   onFieldSubmitted: (_) {
-                //     if (!_isLoading) {
-                //       _createRoom();
-                //     }
-                //   },
-                // ),
-                const SizedBox(height: 24), // Spazio prima del dropdown
 
-                // --- Dropdown per la selezione del set di carte ---
+                const SizedBox(height: 24),
                 DropdownButtonFormField<String>(
                   value: _selectedCardSetName,
                   decoration: const InputDecoration(
@@ -109,9 +92,23 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     return null;
                   },
                 ),
-                // --- Fine Dropdown ---
 
                 const SizedBox(height: 24),
+                Row(children: [
+                  Switch(value: _isSpectator, onChanged: (value){
+                    setState(() {
+                      _isSpectator = value;
+                    });
+                  }),
+
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: const Text("Enter as Spectator"),
+                  ),
+
+                ],),
+                const SizedBox(height: 24),
+
                 _isLoading
                     ? const CircularProgressIndicator()
                     : Container(
@@ -156,9 +153,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
       try {
         String username = (await _prefsService.getUsername())!;
+        await _prefsService.saveIsSpectator(_isSpectator);
         // Passa il set di carte selezionato al service
         final room = await firebaseService.createRoom(
           creatorName: username,
+          isSpectator: _isSpectator,
           cardValues: selectedCards, // Passa il set di carte
         );
         navigator.pushReplacementNamed(
@@ -167,6 +166,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
             'roomId': room.id,
             'participantId': room.creatorId,
             'userName': username,
+            'isSpectator': _isSpectator
             // Non c'è bisogno di passare di nuovo le carte qui,
             // la RoomPage le leggerà da Firebase usando l'ID della stanza.
           },

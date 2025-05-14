@@ -9,6 +9,7 @@ import 'package:poker_planning/components/share_room_dialog_content.dart';
 import 'package:poker_planning/components/user_profile_chip.dart'; // Assicurati che il percorso sia corretto
 import 'package:poker_planning/components/vote_results_summary_view.dart';
 import 'package:poker_planning/components/voting_cards_row.dart';
+import 'package:poker_planning/models/participant.dart';
 import 'package:poker_planning/models/room.dart';
 import 'package:poker_planning/services/firebase_service.dart';
 import 'package:poker_planning/services/user_preferences_service.dart';
@@ -20,6 +21,7 @@ class PlanningRoom extends StatefulWidget {
   final String roomId;
   final String currentParticipantId;
   final String currentUserName;
+  final bool isSpectator;
 
   const PlanningRoom({
     // Rinominato per chiarezza
@@ -27,6 +29,7 @@ class PlanningRoom extends StatefulWidget {
     required this.roomId,
     required this.currentParticipantId,
     required this.currentUserName,
+    required this.isSpectator,
   }) : super(key: key);
 
   @override
@@ -39,8 +42,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
   late RealtimeFirebaseService _firebaseService;
   StreamSubscription<Room>? _roomSubscription;
   Room? _currentRoom;
+  Participant? _me;
   late String _myParticipantId;
-  late String _myUserName;
   String? _selectedVote;
   bool _isLoading = true;
   bool _presenceSetupDone = false;
@@ -54,7 +57,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _firebaseService =
         Provider.of<RealtimeFirebaseService>(context, listen: false);
     _myParticipantId = widget.currentParticipantId;
-    _myUserName = widget.currentUserName;
 
     _subscribeToRoomUpdates();
     _setupPresenceIfNeeded();
@@ -70,62 +72,66 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
     _roomSubscription =
         _firebaseService.getRoomStream(widget.roomId).listen((room) async {
-      if (!mounted) return;
+          if (!mounted) return;
 
-      final bool amIStillInRoom =
+          final bool amIStillInRoom =
           room.participants.any((p) => p.id == _myParticipantId);
 
-      if (!amIStillInRoom && _currentRoom != null) {
-        print(
-            "User $_myParticipantId detected removal from room ${widget.roomId}. Navigating back.");
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('You have been removed from the room.'),
-            backgroundColor: Colors.orangeAccent,
-            duration: Duration(seconds: 3),
-          ),
-        );
-        await _roomSubscription?.cancel();
-        _roomSubscription = null;
-        if (mounted) {
-          Navigator.of(context).pop();
-        }
-        return;
-      }
+          if (!amIStillInRoom && _currentRoom != null) {
+            print(
+                "User $_myParticipantId detected removal from room ${widget
+                    .roomId}. Navigating back.");
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('You have been removed from the room.'),
+                backgroundColor: Colors.orangeAccent,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            await _roomSubscription?.cancel();
+            _roomSubscription = null;
+            if (mounted) {
+              Navigator.of(context).pop();
+            }
+            return;
+          }
 
-      setState(() {
-        _currentRoom = room;
-        if (!room.areCardsRevealed) {
-          final me = room.participants
-              .firstWhereOrNull((p) => p.id == _myParticipantId);
-          _selectedVote = me?.vote;
-        } else {
-          _selectedVote = room.participants
-              .firstWhereOrNull((p) => p.id == _myParticipantId)
-              ?.vote;
-        }
-        _isLoading = false;
-      });
-    }, onError: (error) {
-      if (!mounted) return;
-      print("Error in room stream for ${widget.roomId}: $error");
-      setState(() {
-        _isLoading = false;
-        _currentRoom = null;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Error loading room: $error. You might need to leave.'),
-          backgroundColor: Colors.red));
-    }, onDone: () {
-      if (!mounted) return;
-      print("Room stream for ${widget.roomId} closed.");
-      if (ModalRoute.of(context)?.isCurrent ?? false) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Connection to the room closed.'),
-            backgroundColor: Colors.grey));
-        Navigator.of(context).pop();
-      }
-    });
+          setState(() {
+            _currentRoom = room;
+            if (!room.areCardsRevealed) {
+              _me = room.participants
+                  .firstWhereOrNull((p) => p.id == _myParticipantId);
+              _selectedVote = _me?.vote;
+            } else {
+              _selectedVote = room.participants
+                  .firstWhereOrNull((p) => p.id == _myParticipantId)
+                  ?.vote;
+            }
+            _isLoading = false;
+          });
+        }, onError: (error) {
+          if (!mounted) return;
+          print("Error in room stream for ${widget.roomId}: $error");
+          setState(() {
+            _isLoading = false;
+            _currentRoom = null;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text(
+                  'Error loading room: $error. You might need to leave.'),
+              backgroundColor: Colors.red));
+        }, onDone: () {
+          if (!mounted) return;
+          print("Room stream for ${widget.roomId} closed.");
+          if (ModalRoute
+              .of(context)
+              ?.isCurrent ?? false) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Connection to the room closed.'),
+                backgroundColor: Colors.grey));
+            Navigator.of(context).pop();
+          }
+        });
   }
 
   void _updatePageUrlIfNeeded() {
@@ -246,12 +252,15 @@ class _PlanningRoomState extends State<PlanningRoom> {
       );
     }
 
-    final participants = room.participants;
+    final participants =
+    room.participants.where((p) => !p.isSpectator).toList();
+    final spectators =
+    room.participants.where((p) => p.isSpectator).toList();
     final cardValues = room.cardValues;
     final cardsRevealed = room.areCardsRevealed;
 
     final bool someoneVoted =
-        room.participants.any((p) => p.vote != null && p.vote!.isNotEmpty);
+    room.participants.any((p) => p.vote != null && p.vote!.isNotEmpty);
     final bool canReveal = !cardsRevealed && someoneVoted;
     final bool canReset = cardsRevealed;
 
@@ -270,34 +279,59 @@ class _PlanningRoomState extends State<PlanningRoom> {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1000),
-            child: Column(
+          padding: const EdgeInsets.all(16.0),
+          child: Stack(
               children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: ParticipantsGridView(
-                      participants: participants,
-                      cardsRevealed: cardsRevealed,
-                      myParticipantId: _myParticipantId,
-                      onKickParticipant: _showKickConfirmationDialog,
-                      // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
-                    ),
+              Positioned(left: 0, top: 0,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 24.0),
+                        child: Text("Spectators: ${spectators.length}",
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                      ),
+                      ...spectators.map((elem)=> Text(elem.name))
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                if (cardsRevealed)
-                  VoteResultsSummaryView(room: room)
-                else
+              ),
+              ),
+      Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1000),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  child: ParticipantsGridView(
+                    participants: participants,
+                    cardsRevealed: cardsRevealed,
+                    myParticipantId: _myParticipantId,
+                    onKickParticipant: _showKickConfirmationDialog,
+                    // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              if (cardsRevealed)
+                SizedBox(
+                    height: MediaQuery
+                        .sizeOf(context)
+                        .height / 2,
+                    child: VoteResultsSummaryView(room: room))
+              else
+                if (_me?.isSpectator == false)
                   VotingCardsRow(
                     cardValues: cardValues,
                     selectedVote: _selectedVote,
                     cardsRevealed: cardsRevealed,
                     onVoteSelected: _selectVote,
                   ),
-                const SizedBox(height: 20),
+              const SizedBox(height: 20),
+              if (_me?.isSpectator == false)
                 Align(
                   widthFactor: 1,
                   child: RevealResetButton(
@@ -308,12 +342,14 @@ class _PlanningRoomState extends State<PlanningRoom> {
                     onReset: _resetVoting,
                   ),
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),
+      ],
+    ),)
+    ,
     );
   }
 
@@ -321,21 +357,22 @@ class _PlanningRoomState extends State<PlanningRoom> {
     final roomUrl = '${html.window.location.origin}/room/${widget.roomId}';
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Share Room'),
-        shape:
+      builder: (context) =>
+          AlertDialog(
+            title: const Text('Share Room'),
+            shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-        content: ShareRoomDialogContent(
-          // Usa il widget per il contenuto
-          roomUrl: roomUrl,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            content: ShareRoomDialogContent(
+              // Usa il widget per il contenuto
+              roomUrl: roomUrl,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Close'),
+              ),
+            ],
           ),
-        ],
-      ),
     );
   }
 
@@ -349,19 +386,14 @@ class _PlanningRoomState extends State<PlanningRoom> {
   Future<void> _saveProfile() async {
     {
       var userName = (await _prefsService.getUsername() ?? "Unknown").trim();
-      setState(() {
-        _myUserName = userName;
-      });
-      await _firebaseService.updateParticipantName(
-        widget.roomId,
-        _myParticipantId,
-        userName,
-      );
+      bool isSpectator = await _prefsService.isSpectator() ?? false;
+      _firebaseService.updateParticipant(
+          widget.roomId, _myParticipantId, userName, isSpectator);
     }
   }
 
-  Future<void> _showKickConfirmationDialog(
-      String participantIdToKick, String participantName) async {
+  Future<void> _showKickConfirmationDialog(String participantIdToKick,
+      String participantName) async {
     if (participantIdToKick == _myParticipantId) return;
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -395,8 +427,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
-  Future<void> _kickParticipant(
-      String participantIdToKick, String participantName) async {
+  Future<void> _kickParticipant(String participantIdToKick,
+      String participantName) async {
     final messenger = ScaffoldMessenger.of(context);
     print(
         'Kicking participant $participantIdToKick from room ${widget.roomId}');

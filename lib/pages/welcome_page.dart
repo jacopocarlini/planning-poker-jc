@@ -147,13 +147,18 @@ class _WelcomePageState extends State<WelcomePage> {
       // --- Logo/Immagine ---
       Padding(
         padding: const EdgeInsets.only(bottom: 30.0),
-        // Spazio sotto l'immagine
-        // child: Image.asset(
-        //   _logoPath,
-        //   height: 120, // Altezza del logo
-        //   errorBuilder: (context, error, stackTrace) => const Icon(Icons.style, size: 80, color: Colors.grey),
-        // ),
-        child: Text("♠️", style: TextStyle(fontSize: 120)),
+        child: Image.asset(
+          'assets/logo/logo.png',
+          // Assicurati che questo file esista
+          // e sia dichiarato in pubspec.yaml
+          height: 200, // Altezza del logo, regolala come preferisci
+          errorBuilder: (context, error, stackTrace) {
+            // Questo widget viene mostrato se l'immagine non viene trovata o c'è un errore
+            print('Errore caricamento logo: $error'); // Utile per il debug
+            return Text("♠️", style: TextStyle(fontSize: 120));
+          },
+        ),
+        // child: Text("♠️", style: TextStyle(fontSize: 120)),
       ),
 
       // --- Messaggio di Benvenuto ---

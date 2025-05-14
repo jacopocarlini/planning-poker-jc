@@ -16,6 +16,7 @@ class UserProfileChip extends StatefulWidget {
 class _UserProfileChipState extends State<UserProfileChip> {
   final _prefsService = UserPreferencesService();
   String? _username;
+  bool? _isSpectator;
   bool _isLoading = true;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -30,16 +31,19 @@ class _UserProfileChipState extends State<UserProfileChip> {
     setState(() => _isLoading = true);
     try {
       final name = await _prefsService.getUsername();
+      final spectator = await _prefsService.isSpectator();
       if (mounted) {
         setState(() {
           _username = name;
+          _isSpectator = spectator;
+
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() =>
-            _isLoading = false); // Smetti di caricare anche in caso di errore
+        _isLoading = false); // Smetti di caricare anche in caso di errore
       }
     }
   }
@@ -89,12 +93,18 @@ class _UserProfileChipState extends State<UserProfileChip> {
           child: Row(children: [
             CircleAvatar(
               // Puoi personalizzare il colore o usare un'immagine se disponibile
-              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+              backgroundColor: Theme
+                  .of(context)
+                  .colorScheme
+                  .secondaryContainer,
               child: Text(
                 _getInitials(_username),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  color: Theme
+                      .of(context)
+                      .colorScheme
+                      .onSecondaryContainer,
                 ),
               ),
             ),
@@ -104,66 +114,105 @@ class _UserProfileChipState extends State<UserProfileChip> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ]
-              // Puoi aggiungere altre personalizzazioni al Chip qui
-              // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              ),
+            // Puoi aggiungere altre personalizzazioni al Chip qui
+            // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          ),
         ),
       ),
     );
   }
 
-  Future<void> _changeProfile(context) async {
+  Future<void> _changeProfile(BuildContext context) async { // 'context' qui è quello di UserProfileChip
+    // Pre-carica il valore corrente di _isSpectator se non è già fatto o se vuoi essere sicuro
+    // _isSpectator dovrebbe già avere il valore corretto da _loadUsername
     _nameController.text = await _prefsService.getUsername() ?? "Unknown";
+
+    // Non è necessario avere una variabile di stato separata _switch
+    // bool currentSwitchStateInDialog = _isSpectator ?? false; // Puoi usarla se preferisci non modificare _isSpectator direttamente fino al salvataggio
+
     showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit your profile'),
-        content: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Change your name'),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Enter Your Name',
+      context: context, // context originale del UserProfileChip
+      builder: (dialogContext) { // dialogContext è il context specifico del dialogo
+        return StatefulBuilder( // <--- AGGIUNGI QUESTO
+          builder: (BuildContext context, StateSetter setStateDialog) { // setStateDialog è per il dialogo
+            return AlertDialog(
+              title: const Text('Edit your profile'),
+              content: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Change your name'),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Enter Your Name',
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty || value.trim().isEmpty) {
+                          return 'Please enter a valid name';
+                        }
+                        return null;
+                      },
+                      onFieldSubmitted: (value) async {
+                        // Passa dialogContext per chiudere il dialogo corretto
+                        await _handleSave(dialogContext);
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(top: 16.0),
+                      child: Row(
+                        children: [
+                          Switch(
+                            value: _isSpectator ?? false, // Legge direttamente dallo stato del widget padre
+                            onChanged: (value) {
+                              setStateDialog(() { // <--- USA setStateDialog QUI
+                                // Aggiorna la variabile di stato del widget padre
+                                // Questo farà ri-renderizzare solo il contenuto del StatefulBuilder (quindi il dialogo)
+                                _isSpectator = value;
+                              });
+                            },
+                          ),
+                          const Padding(
+                            padding: EdgeInsets.only(left: 8.0),
+                            child: Text("Enter as Spectator"),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty || value.trim().isEmpty) {
-                    return 'Please enter a valid name';
-                  }
-                  return null;
-                },
-                onFieldSubmitted: (value) async {
-                  await _handleSave(dialogContext);
-                },
               ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () async {
-              await _handleSave(dialogContext);
-            },
-            child: const Text("Save"),
-          ),
-        ],
-      ),
+              actions: [
+                TextButton(
+                  onPressed: () async {
+                    // Passa dialogContext per chiudere il dialogo corretto
+                    await _handleSave(dialogContext);
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
-  Future<void> _handleSave(BuildContext dialogContext) async {
+// Il metodo _handleSave rimane quasi invariato, assicurati solo di passare il context corretto per Navigator.pop
+  Future<void> _handleSave(BuildContext dialogContext) async { // Riceve il dialogContext
     if (_formKey.currentState!.validate()) {
       await _prefsService.saveUsername(_nameController.text.trim());
+      await _prefsService.saveIsSpectator(_isSpectator ?? false); // _isSpectator è già aggiornato
       if (widget.onTap != null) {
         widget.onTap!();
       }
-      await _loadUsername();
-      Navigator.pop(dialogContext);
+      await _loadUsername(); // Ricarica i dati e aggiorna l'UI del UserProfileChip
+      if (Navigator.canPop(dialogContext)) { // Controlla se il dialogo può essere chiuso
+        Navigator.pop(dialogContext); // Usa dialogContext per chiudere il dialogo
+      }
     }
   }
 }

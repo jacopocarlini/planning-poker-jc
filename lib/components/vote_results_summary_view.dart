@@ -46,7 +46,7 @@ class VoteResultsSummaryView extends StatelessWidget {
     double yAxisInterval = 1;
 
     return SizedBox(
-      height: 250,
+      height: 200,
       child: AspectRatio(
         aspectRatio: 3, // Regola questo per le dimensioni del grafico
         child: Padding(
@@ -277,8 +277,7 @@ class VoteResultsSummaryView extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: ListView(
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -304,8 +303,10 @@ class VoteResultsSummaryView extends StatelessWidget {
             const SizedBox(
               height: 46,
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            Wrap(
+              alignment: WrapAlignment.spaceAround,
+              runAlignment: WrapAlignment.spaceAround,
+              spacing: 50,
               children: [
                 _buildResultStat(context, "Total Voters",
                     participantsWhoVoted.length.toString()),

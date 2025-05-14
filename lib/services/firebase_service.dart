@@ -36,13 +36,13 @@ class RealtimeFirebaseService {
 
   // Create a new room
   Future<Room> createRoom(
-      {required String creatorName, required List<String> cardValues}) async {
+      {required String creatorName, required bool isSpectator, required List<String> cardValues}) async {
     var creatorId = _generateUserId(); // ID casuale per il creatore
     if (await _prefsService.hasId()) {
       creatorId = (await _prefsService.getId())!;
     }
     final creator =
-        Participant(id: creatorId, name: creatorName, isCreator: true);
+        Participant(id: creatorId, name: creatorName, isCreator: true, isSpectator: isSpectator);
     _prefsService.saveId(creatorId);
 
     final newRoomRef = _roomsRef.push(); // Firebase genera l'ID della stanza
@@ -64,7 +64,7 @@ class RealtimeFirebaseService {
 
   // Join an existing room
   Future<Room?> joinRoom(
-      {required String roomId, required String participantName}) async {
+      {required String roomId, required String participantName, required bool isSpectator}) async {
     final roomRef = _getRoomRef(roomId);
 
     try {
@@ -79,7 +79,7 @@ class RealtimeFirebaseService {
         participantId = (await _prefsService.getId())!;
       }
       final newParticipant =
-          Participant(id: participantId, name: participantName);
+          Participant(id: participantId, name: participantName, isSpectator: isSpectator);
       _prefsService.saveId(participantId);
 
       // Aggiungi il partecipante alla mappa nel DB
@@ -311,8 +311,8 @@ class RealtimeFirebaseService {
     }
   }
 
-  Future<void> updateParticipantName(
-      String roomId, String participantId, String newName) async {
+  Future<void> updateParticipant(
+      String roomId, String participantId, String newName, bool isSpectator) async {
     if (roomId.isEmpty) {
       throw ArgumentError("Room ID cannot be empty.");
     }
@@ -337,5 +337,7 @@ class RealtimeFirebaseService {
       // Rilancia l'eccezione per farla gestire dal chiamante (es. UI)
       throw Exception("Database error updating participant name: $e");
     }
+    final DatabaseReference participantSpectatorRef = _getRoomRef(roomId).child('participants/$participantId/isSpectator');
+    await participantSpectatorRef.set(isSpectator);
   }
 }

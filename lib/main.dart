@@ -65,6 +65,7 @@ class PokerPlanningApp extends StatelessWidget {
                 roomId: arguments['roomId'] as String,
                 currentParticipantId: arguments['participantId'] as String,
                 currentUserName: arguments['userName'] as String,
+                isSpectator: arguments['isSpectator'] as bool,
               ),
               settings: settings, // Pass settings along
             );

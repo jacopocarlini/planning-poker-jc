@@ -241,4 +241,8 @@ final ThemeData appThemeData = ThemeData(
     contentTextStyle: TextStyle(color: darkText, fontSize: 14, height: 1.4, fontFamily: 'Poppins'),
   ),
 
+  scrollbarTheme: const ScrollbarThemeData(
+    thumbVisibility: WidgetStatePropertyAll(true),
+  )
+
 );

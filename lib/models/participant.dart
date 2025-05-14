@@ -9,12 +9,14 @@ class Participant {
   final String name;
   final String? vote;
   final bool isCreator;
+  final bool isSpectator;
 
   Participant({
     required this.id,
     required this.name,
     this.vote,
     this.isCreator = false,
+    this.isSpectator = false,
   });
 
   Participant copyWith({
@@ -22,6 +24,7 @@ class Participant {
     String? name,
     String? vote,
     bool? isCreator,
+    bool? isSpectator,
     bool? clearVote,
   }) {
     return Participant(
@@ -29,6 +32,7 @@ class Participant {
       name: name ?? this.name,
       vote: clearVote == true ? null : vote ?? this.vote,
       isCreator: isCreator ?? this.isCreator,
+      isSpectator: isSpectator ?? this.isSpectator,
     );
   }
 
@@ -37,6 +41,7 @@ class Participant {
     'name': name,
     'vote': vote,
     'isCreator': isCreator,
+    'isSpectator': isSpectator,
   };
 
   static Participant fromJson(Map<String, dynamic> json) => Participant(
@@ -44,5 +49,6 @@ class Participant {
     name: json['name'] as String? ?? 'Unknown', // Fallback nome se mancante
     vote: json['vote'] as String?,
     isCreator: json['isCreator'] as bool? ?? false,
+    isSpectator: json['isSpectator'] as bool? ?? false,
   );
 }

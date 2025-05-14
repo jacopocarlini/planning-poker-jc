@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class UserPreferencesService {
   static const _keyUsername = 'username';
   static const _keyId = 'id';
+  static const _isSpectator = 'isSpectator';
 
   Future<void> saveUsername(String username) async {
     final prefs = await SharedPreferences.getInstance();
@@ -43,4 +44,16 @@ class UserPreferencesService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyId);
   }
+
+  Future<void> saveIsSpectator(bool isSpectator) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_isSpectator, isSpectator);
+  }
+
+  Future<bool?> isSpectator() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_isSpectator);
+  }
+
+
 }
