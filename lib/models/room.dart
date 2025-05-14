@@ -1,5 +1,6 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:poker_planning/models/participant.dart';
+import 'package:poker_planning/models/vote_history_entry.dart';
 
 class Room {
   final String id;
@@ -7,6 +8,8 @@ class Room {
   final List<Participant> participants;
   final bool areCardsRevealed;
   final List<String> cardValues;
+  final String? currentStoryTitle;
+  final List<VoteHistoryEntry> historyVote;
 
   Room({
     required this.id,
@@ -14,12 +17,18 @@ class Room {
     required this.participants,
     this.areCardsRevealed = false,
     this.cardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'],
-  });
+    this.currentStoryTitle,
+    this.historyVote = const [],
+  }); // Default a lista vuota
 
   // Factory constructor per creare una Room solo da una lista di voti
   factory Room.fromVotesList(List<String> votes) {
     return Room(
-      participants: votes.map((vote) => Participant(vote: vote, id: '', name: '')).toList(), id: '', creatorId: '',
+      participants: votes
+          .map((vote) => Participant(vote: vote, id: '', name: ''))
+          .toList(),
+      id: '',
+      creatorId: '',
     );
   }
 
@@ -41,18 +50,21 @@ class Room {
 
   factory Room.fromSnapshot(DataSnapshot snapshot) {
     final roomId = snapshot.key!;
-    final value = snapshot.value; // Può essere null se la stanza è vuota o non esiste
+    final value =
+        snapshot.value; // Può essere null se la stanza è vuota o non esiste
 
     // Gestione del caso in cui value sia null o non sia una mappa
     if (value == null || value is! Map) {
       // In questo caso, lanciamo un'eccezione perché una stanza valida DEVE essere una mappa
-      throw FormatException("Invalid data format for room $roomId. Expected a Map.");
+      throw FormatException(
+          "Invalid data format for room $roomId. Expected a Map.");
     }
 
     // Ora sappiamo che value è una Map, possiamo fare il cast sicuro
     final data = Map<String, dynamic>.from(value as Map);
 
-    final participantsMap = data['participants'] as Map<dynamic, dynamic>? ?? {};
+    final participantsMap =
+        data['participants'] as Map<dynamic, dynamic>? ?? {};
     final participantsList = participantsMap.entries.map((entry) {
       final participantId = entry.key as String;
       // Controlla se il valore del partecipante è una mappa valida
@@ -65,17 +77,27 @@ class Room {
           return Participant.fromJson(participantData);
         } catch (e) {
           // Salta questo partecipante o crea un partecipante di default
-          return Participant(id: participantId, name: "Error Parsing", isCreator: false);
+          return Participant(
+              id: participantId, name: "Error Parsing", isCreator: false);
         }
       } else {
         // Salta questo partecipante o crea un partecipante di default
-        return Participant(id: participantId, name: "Invalid Data", isCreator: false);
+        return Participant(
+            id: participantId, name: "Invalid Data", isCreator: false);
       }
-
     }).toList();
 
-
-    final defaultCardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'];
+    final defaultCardValues = const [
+      '0',
+      '1',
+      '2',
+      '3',
+      '5',
+      '8',
+      '13',
+      '?',
+      '☕'
+    ];
     final dbCardValues = data['cardValues'] as List<dynamic>?;
 
     List<String> cardValuesList;
@@ -93,6 +115,16 @@ class Room {
       cardValuesList = defaultCardValues;
     }
 
+    List<VoteHistoryEntry> historyVoteList = [];
+    try {
+      final historyVotList = data['historyVote'] as List<dynamic>? ?? [];
+      historyVoteList = historyVotList.where((elem)=>elem!=null).map((entry) {
+        Map<String, dynamic> json = Map<String, dynamic>.from(entry ?? {} as Map);
+        return VoteHistoryEntry.fromJson(json);
+      }).toList();
+    } catch (err) {
+      print(err);
+    }
 
     return Room(
       id: roomId,
@@ -100,16 +132,21 @@ class Room {
       participants: participantsList,
       areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
       cardValues: cardValuesList,
+      currentStoryTitle: data['currentStoryTitle'] as String?,
+      historyVote: historyVoteList
     );
   }
 
   Map<String, dynamic> toJsonForDb() => {
-    // 'id': id, // L'ID è la CHIAVE nel DB
-    'creatorId': creatorId,
-    'participants': Map.fromEntries(
-        participants.map((p) => MapEntry(p.id, p.toJson()))
-    ),
-    'areCardsRevealed': areCardsRevealed,
-    'cardValues': cardValues,
-  };
+        // 'id': id, // L'ID è la CHIAVE nel DB
+        'creatorId': creatorId,
+        'participants': Map.fromEntries(
+            participants.map((p) => MapEntry(p.id, p.toJson()))),
+        'areCardsRevealed': areCardsRevealed,
+        'cardValues': cardValues,
+        'currentStoryTitle': currentStoryTitle,
+        'historyVote': Map.fromEntries(historyVote.map((v) {
+          return MapEntry(v.id, v.toJson());
+        })),
+      };
 }

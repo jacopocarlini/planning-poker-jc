@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 // Helper function to create a MaterialColor from a single Color.
@@ -243,6 +244,6 @@ final ThemeData appThemeData = ThemeData(
 
   scrollbarTheme: const ScrollbarThemeData(
     thumbVisibility: WidgetStatePropertyAll(true),
-  )
-
+  ),
+  dividerColor: CupertinoColors.lightBackgroundGray
 );

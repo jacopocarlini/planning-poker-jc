@@ -37,6 +37,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   @override
   void initState() {
     super.initState();
+    _prefsService.isSpectator().then((value){
+      setState(() {
+        _isSpectator = value ?? false;
+      });
+    });
   }
 
   @override
@@ -99,11 +104,12 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     setState(() {
                       _isSpectator = value;
                     });
+                    _prefsService.saveIsSpectator(value);
                   }),
 
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8.0),
-                    child: const Text("Enter as Spectator"),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 8.0),
+                    child: Text("Enter as Spectator"),
                   ),
 
                 ],),

@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:poker_planning/models/participant.dart';
 import 'package:poker_planning/models/room.dart';
+import 'package:poker_planning/models/vote_history_entry.dart';
 import 'package:poker_planning/services/user_preferences_service.dart';
 
 import '../firebase_options.dart';
@@ -36,13 +37,18 @@ class RealtimeFirebaseService {
 
   // Create a new room
   Future<Room> createRoom(
-      {required String creatorName, required bool isSpectator, required List<String> cardValues}) async {
+      {required String creatorName,
+      required bool isSpectator,
+      required List<String> cardValues}) async {
     var creatorId = _generateUserId(); // ID casuale per il creatore
     if (await _prefsService.hasId()) {
       creatorId = (await _prefsService.getId())!;
     }
-    final creator =
-        Participant(id: creatorId, name: creatorName, isCreator: true, isSpectator: isSpectator);
+    final creator = Participant(
+        id: creatorId,
+        name: creatorName,
+        isCreator: true,
+        isSpectator: isSpectator);
     _prefsService.saveId(creatorId);
 
     final newRoomRef = _roomsRef.push(); // Firebase genera l'ID della stanza
@@ -64,7 +70,9 @@ class RealtimeFirebaseService {
 
   // Join an existing room
   Future<Room?> joinRoom(
-      {required String roomId, required String participantName, required bool isSpectator}) async {
+      {required String roomId,
+      required String participantName,
+      required bool isSpectator}) async {
     final roomRef = _getRoomRef(roomId);
 
     try {
@@ -78,8 +86,8 @@ class RealtimeFirebaseService {
       if (await _prefsService.hasId()) {
         participantId = (await _prefsService.getId())!;
       }
-      final newParticipant =
-          Participant(id: participantId, name: participantName, isSpectator: isSpectator);
+      final newParticipant = Participant(
+          id: participantId, name: participantName, isSpectator: isSpectator);
       _prefsService.saveId(participantId);
 
       // Aggiungi il partecipante alla mappa nel DB
@@ -111,7 +119,7 @@ class RealtimeFirebaseService {
     return roomRef.onValue.map((event) {
       final snapshot = event.snapshot;
       if (!snapshot.exists || snapshot.value == null) {
-        throw Exception("Room $roomId not found or has been deleted.");
+        throw Exception("Room not found or has been deleted.");
       }
       try {
         // Deserializza i dati, gestendo potenziali errori di formato
@@ -148,12 +156,58 @@ class RealtimeFirebaseService {
 
   // Reveal all cards in the room
   Future<void> revealCards({required String roomId}) async {
-    final revealRef = _getRoomRef(roomId).child('areCardsRevealed');
+    final roomRef = _getRoomRef(roomId); // Riferimento alla room principale
+
+    final Map<String, int> voteCounts = {};
+
     try {
-      // Imposta a true. Chiunque può farlo.
-      await revealRef.set(true);
+      // 1. Ottenere i dati dei partecipanti
+      final participantsSnapshot = await roomRef.child('participants').get();
+
+      if (participantsSnapshot.exists && participantsSnapshot.value != null) {
+        // Supponiamo che 'participants' sia una mappa dove la chiave è l'ID utente
+        // e il valore è un oggetto/mappa con i dettagli del partecipante, incluso 'vote'.
+        // Esempio: participants: { "userId1": {"name": "Alice", "vote": "5"}, ... }
+        final participantsData =
+            participantsSnapshot.value as Map<dynamic, dynamic>;
+
+        participantsData.forEach((participantId, participantDetails) {
+          if (participantDetails is Map &&
+              participantDetails.containsKey('vote')) {
+            final vote = participantDetails['vote'] as String?;
+            if (vote != null && vote.isNotEmpty) {
+              // Popola voteCounts
+              voteCounts['v-$vote'] = (voteCounts['v-$vote'] ?? 0) + 1;
+
+            }
+          }
+        });
+      }
+
+      // 2. Aggiornare la room con areCardsRevealed e nvoteCounts
+      // Usiamo update() per modificare/aggiungere campi specifici senza sovrascrivere l'intera room.
+      await roomRef.update({
+        'areCardsRevealed': true,
+      });
+
+      var historyRef = roomRef.child('historyVote');
+      final historySnapshot = await historyRef.get();
+      int id = 0;
+      if(historySnapshot.exists && historySnapshot.value != null){
+        var historyData = historySnapshot.value as List;
+        id = historyData.length;
+      }
+      await roomRef
+          .child('historyVote')
+          .child(id.toString())
+          .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
+
+
     } catch (e) {
-      throw Exception("Database error revealing cards: $e");
+      // È buona pratica loggare l'errore o rilanciare un'eccezione più specifica
+      print("Database error in revealCards: $e");
+      throw Exception(
+          "Database error revealing cards or saving vote counts: $e");
     }
   }
 
@@ -311,8 +365,8 @@ class RealtimeFirebaseService {
     }
   }
 
-  Future<void> updateParticipant(
-      String roomId, String participantId, String newName, bool isSpectator) async {
+  Future<void> updateParticipant(String roomId, String participantId,
+      String newName, bool isSpectator) async {
     if (roomId.isEmpty) {
       throw ArgumentError("Room ID cannot be empty.");
     }
@@ -337,7 +391,40 @@ class RealtimeFirebaseService {
       // Rilancia l'eccezione per farla gestire dal chiamante (es. UI)
       throw Exception("Database error updating participant name: $e");
     }
-    final DatabaseReference participantSpectatorRef = _getRoomRef(roomId).child('participants/$participantId/isSpectator');
+    final DatabaseReference participantSpectatorRef =
+        _getRoomRef(roomId).child('participants/$participantId/isSpectator');
     await participantSpectatorRef.set(isSpectator);
+  }
+
+  Future<void> updateStoryTitle(Room room, VoteHistoryEntry entry, String newTitle) async {
+    var roomRef = _getRoomRef(room.id);
+    entry.storyTitle = newTitle;
+     await roomRef
+        .child('historyVote')
+        .child(entry.id.toString())
+        .set(entry.toJson());
+
+  }
+
+  Future<void> addHistory(String roomId) async {
+    var roomRef = _getRoomRef(roomId);
+    var historyRef = roomRef.child('historyVote');
+    final historySnapshot = await historyRef.get();
+    int id = 0;
+    if(historySnapshot.exists && historySnapshot.value != null){
+      var historyData = historySnapshot.value as List;
+      id = historyData.length;
+    }
+    await roomRef
+        .child('historyVote')
+        .child(id.toString())
+        .set(VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Story').toJson());
+  }
+
+  Future<void> deleteHistory(String roomId, VoteHistoryEntry entry) async {
+    var roomRef = _getRoomRef(roomId);
+    await roomRef
+        .child('historyVote')
+        .child(entry.id.toString()).remove();
   }
 }

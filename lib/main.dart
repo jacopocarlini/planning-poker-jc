@@ -21,7 +21,6 @@ void main() async {
   // Initialize the Firebase service
   final firebaseService = RealtimeFirebaseService();
   await firebaseService.initialize(); // Ensure initialized before use
-
   runApp(
     MultiProvider(
       providers: [
