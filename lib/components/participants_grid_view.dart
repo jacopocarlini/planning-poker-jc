@@ -38,7 +38,7 @@ class ParticipantsGridView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
-            'Team Members: ${participants.length}',
+            '👥 Team Members: ${participants.length}',
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ),

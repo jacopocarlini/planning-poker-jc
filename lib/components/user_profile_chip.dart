@@ -24,10 +24,10 @@ class _UserProfileChipState extends State<UserProfileChip> {
   @override
   void initState() {
     super.initState();
-    _loadUsername();
+    _loadUser();
   }
 
-  Future<void> _loadUsername() async {
+  Future<void> _loadUser() async {
     setState(() => _isLoading = true);
     try {
       final name = await _prefsService.getUsername();
@@ -209,7 +209,7 @@ class _UserProfileChipState extends State<UserProfileChip> {
       if (widget.onTap != null) {
         widget.onTap!();
       }
-      await _loadUsername(); // Ricarica i dati e aggiorna l'UI del UserProfileChip
+      await _loadUser(); // Ricarica i dati e aggiorna l'UI del UserProfileChip
       if (Navigator.canPop(dialogContext)) { // Controlla se il dialogo può essere chiuso
         Navigator.pop(dialogContext); // Usa dialogContext per chiudere il dialogo
       }

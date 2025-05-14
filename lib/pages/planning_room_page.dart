@@ -98,9 +98,9 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
           setState(() {
             _currentRoom = room;
-            if (!room.areCardsRevealed) {
               _me = room.participants
                   .firstWhereOrNull((p) => p.id == _myParticipantId);
+            if (!room.areCardsRevealed) {
               _selectedVote = _me?.vote;
             } else {
               _selectedVote = room.participants
@@ -285,12 +285,12 @@ class _PlanningRoomState extends State<PlanningRoom> {
               Positioned(left: 0, top: 0,
               child: Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: const EdgeInsets.all(20.0),
                   child: Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 24.0),
-                        child: Text("Spectators: ${spectators.length}",
+                        padding: const EdgeInsets.only(bottom: 12.0),
+                        child: Text("👀 Spectators: ${spectators.length}",
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                       ),
                       ...spectators.map((elem)=> Text(elem.name))

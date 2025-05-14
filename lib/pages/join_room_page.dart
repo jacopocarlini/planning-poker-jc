@@ -46,7 +46,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
         _isLoading = true; // Mostra l'indicatore di caricamento
         // Opzionale: Pre-compila il campo di testo per coerenza UX
         _nameController.text = storedUsername;
-        _isSpectator = _isSpectator;
+        _isSpectator = isSpectator ?? false;
       });
 
       // Chiama la funzione di join passando l'username recuperato
