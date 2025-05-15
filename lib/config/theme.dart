@@ -31,6 +31,7 @@ MaterialColor createMaterialColor(Color color) {
 const Color primaryBlue = Color(0xFF4A90E2); // Main blue from banner/buttons
 const Color lightBlue = Color(0xFF5D9FEC);
 const Color lightBlueGrey = Color(0xFF9EC5F1);
+const Color lightBlueGrey2 = Color(0xFFC5D6EA);
 const Color lightGreyBackground = Color(0xFFF8F9FA); // Very light main background
 const Color cardWhite = Colors.white;
 const Color darkText = Color(0xFF4A4A4A); // Dark grey for text

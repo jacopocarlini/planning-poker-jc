@@ -117,9 +117,8 @@ class Room {
 
     List<VoteHistoryEntry> historyVoteList = [];
     try {
-      final aux = data['historyVote'] as List<dynamic>? ?? [];
-      historyVoteList =
-          aux.where((elem) => elem != null).map((entry) {
+      final aux = (data['historyVote'] ?? {}) as Map ?? {};
+      historyVoteList = aux.values.map((entry) {
         Map<String, dynamic> json =
             Map<String, dynamic>.from(entry ?? {} as Map);
         return VoteHistoryEntry.fromJson(json);

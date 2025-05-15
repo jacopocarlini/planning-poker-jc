@@ -33,7 +33,7 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.entry.storyTitle ?? 'Unnamed Story';
+    final title = widget.entry.storyTitle ?? 'Unnamed Task';
     final average = widget.entry.averageVote;
 
     return MouseRegion(
@@ -41,12 +41,18 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
       onExit: (_) => setState(() => _isHovered = false),
       child: Stack(
         children: [
-
           Card(
             margin: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
             elevation: _isHovered ? 4 : 2,
+            shape: RoundedRectangleBorder(
+                side: BorderSide(
+                    width: 2,
+                    color: widget.entry.selected == true
+                        ? primaryBlue
+                        : Colors.transparent),
+                borderRadius: BorderRadius.circular(8.0)),
             // Leggero effetto di sollevamento sull'hover
-            color: widget.entry.selected == true ? lightBlueGrey : Colors.white,
+            color: Colors.white,
             child: Padding(
               padding: const EdgeInsets.all(12.0),
               child: Column(
@@ -83,11 +89,14 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
                           Text(
-                            average != null ? average.toStringAsFixed(2) : 'N/A',
-                            style:
-                                Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                    ),
+                            widget.entry.voteCounts.isEmpty
+                                ? '-'
+                                : average != null
+                                    ? average.toStringAsFixed(2)
+                                    : 'N/A',
+                            style: Theme.of(context)
+                                .textTheme
+                                .headlineSmall,
                           ),
                         ],
                       ),
@@ -95,18 +104,33 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           if (widget.entry.voteCounts.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ElevatedButton(
+                                child: const Icon(Icons.bar_chart, size: 18),
+                                // label: const Text(''),
+                                onPressed: () {
+                                  widget.onItemTap(context, widget.entry);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 12, vertical: 8),
+                                    textStyle: const TextStyle(fontSize: 14)),
+                              ),
+                            ),
+                          if (widget.entry.selected == true)
                             ElevatedButton.icon(
-                              icon: const Icon(Icons.bar_chart, size: 18),
-                              label: const Text('Details'),
+                              icon: const Icon(Icons.how_to_vote, size: 18),
+                              label: Text('Voting'),
                               onPressed: () {
-                                widget.onItemTap(context, widget.entry);
+                                widget.onSelectedEntry(widget.entry);
                               },
                               style: ElevatedButton.styleFrom(
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
                                   textStyle: const TextStyle(fontSize: 14)),
-                            ),
-                          if (widget.entry.selected == false)
+                            )
+                          else
                             ElevatedButton.icon(
                               icon: const Icon(Icons.how_to_vote, size: 18),
                               label: const Text('Select to vote'),
@@ -114,6 +138,8 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
                                 widget.onSelectedEntry(widget.entry);
                               },
                               style: ElevatedButton.styleFrom(
+                                  backgroundColor: lightBlueGrey,
+
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 12, vertical: 8),
                                   textStyle: const TextStyle(fontSize: 14)),
@@ -129,10 +155,9 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
           if (_isHovered) // Mostra il pulsante solo sull'hover
             Positioned(
               top: 0,
-              left: 4,
+              right: 4,
               child: IconButton(
-                icon: const Icon(Icons.delete_forever,
-                    color: Colors.redAccent),
+                icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
                 iconSize: 24,
                 tooltip: 'Delete Round',
                 splashRadius: 24,

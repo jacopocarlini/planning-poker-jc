@@ -195,17 +195,20 @@ class RealtimeFirebaseService {
         final historySnapshot = await historyRef.get();
         int id = 0;
         if (historySnapshot.exists && historySnapshot.value != null) {
-          var historyData = historySnapshot.value as List;
-          id = historyData.length;
+          Map historyData = historySnapshot.value as Map;
+          id = historyData.values
+                  .map((elem) => elem['id'] as int)
+                  .reduce((int a, int b) => max(a, b)) +
+              1;
         }
         await roomRef
             .child('historyVote')
-            .child(id.toString())
+            .child('v-' + id.toString())
             .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
       } else {
         await roomRef
             .child('historyVote')
-            .child(idSelected.toString())
+            .child('v-' + idSelected.toString())
             .update({'voteCounts': voteCounts});
       }
     } catch (e) {
@@ -217,7 +220,7 @@ class RealtimeFirebaseService {
   }
 
   // Reset voting (hide cards, clear votes)
-  Future<void> resetVoting({required String roomId}) async {
+  Future<void> resetVoting({required String roomId, bool selected = false}) async {
     final roomRef = _getRoomRef(roomId);
 
     try {
@@ -235,7 +238,7 @@ class RealtimeFirebaseService {
           // Aggiungi un percorso all'oggetto updates per cancellare il voto
           updates['/participants/$participantId/vote'] = null;
         }
-      } else {}
+      }
 
       // 3. Esegui l'aggiornamento atomico
       if (updates.isNotEmpty) {
@@ -243,10 +246,11 @@ class RealtimeFirebaseService {
         await roomRef.update(updates);
         int? idSelected = await getStorySelected(roomId);
         if (idSelected is int) {
+          if(!selected) roomRef.child('currentStoryTitle').set('');
           await roomRef
               .child('historyVote')
-              .child(idSelected.toString())
-              .update({'selected': false});
+              .child('v-' + idSelected.toString())
+              .update({'selected': selected});
         }
       }
     } catch (e) {
@@ -412,9 +416,11 @@ class RealtimeFirebaseService {
       Room room, VoteHistoryEntry entry, String newTitle) async {
     var roomRef = _getRoomRef(room.id);
     entry.storyTitle = newTitle;
+    roomRef.child('currentStoryTitle').set(newTitle);
+
     await roomRef
         .child('historyVote')
-        .child(entry.id.toString())
+        .child('v-' + entry.id.toString())
         .set(entry.toJson());
   }
 
@@ -424,35 +430,50 @@ class RealtimeFirebaseService {
     final historySnapshot = await historyRef.get();
     int id = 0;
     if (historySnapshot.exists && historySnapshot.value != null) {
-      var historyData = historySnapshot.value as List;
-      id = historyData.length;
+      Map historyData = historySnapshot.value as Map;
+      id = historyData.values
+              .map((elem) => elem['id'] as int)
+              .reduce((int a, int b) => max(a, b)) +
+          1;
     }
-    await roomRef.child('historyVote').child(id.toString()).set(
-        VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Story')
+    await roomRef.child('historyVote').child('v-' + id.toString()).set(
+        VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Task')
             .toJson());
   }
 
   Future<void> deleteHistory(String roomId, VoteHistoryEntry entry) async {
     var roomRef = _getRoomRef(roomId);
-    await roomRef.child('historyVote').child(entry.id.toString()).remove();
+    await roomRef
+        .child('historyVote')
+        .child('v-' + entry.id.toString())
+        .remove();
   }
 
   Future<void> selectedEntry(String roomId, VoteHistoryEntry entry) async {
     var roomRef = _getRoomRef(roomId);
+
     var historyRef = roomRef.child('historyVote');
     final historySnapshot = await historyRef.get();
+
     if (historySnapshot.exists && historySnapshot.value != null) {
-      var historyData = historySnapshot.value as List;
-      for (var elem in historyData) {
-        if(elem==null)continue;
-        if(elem['id'] is! int){
+      var historyData = historySnapshot.value as Map;
+      for (var elem in historyData.values) {
+        if (elem == null) continue;
+        if (elem['id'] is! int) {
           return;
         }
         var id = (elem['id'] as int);
         bool selected = entry.id == id;
-        await roomRef.child('historyVote').child(id.toString()).update({
+        if (elem['selected'] == selected) continue;
+        if (selected)
+          roomRef.child('currentStoryTitle').set((elem['storyTitle'] ??'Unnamed Task' ) as String);
+        roomRef.child('historyVote').child('v-' + id.toString()).update({
           'selected': selected,
         });
+        roomRef.update({
+          'areCardsRevealed': false,
+        });
+        resetVoting(roomId: roomId, selected: true);
       }
     }
   }
@@ -462,9 +483,9 @@ class RealtimeFirebaseService {
     var historyRef = roomRef.child('historyVote');
     final historySnapshot = await historyRef.get();
     if (historySnapshot.exists && historySnapshot.value != null) {
-      var historyData = historySnapshot.value as List;
-      for (var elem in historyData) {
-        if(elem == null) continue;
+      var historyData = historySnapshot.value as Map;
+      for (var elem in historyData.values) {
+        if (elem == null) continue;
         if (elem['selected'] is bool && elem['selected'] == true) {
           return elem['id'] as int;
         }
