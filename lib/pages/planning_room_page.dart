@@ -102,7 +102,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
           setState(() {
             _currentRoom = room;
-            _me =
+              _me =
                 room.participants.firstWhereOrNull((p) =>
                 p.id == _myParticipantId);
             if (!room.areCardsRevealed) {
