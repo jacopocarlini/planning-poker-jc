@@ -178,7 +178,6 @@ class RealtimeFirebaseService {
             if (vote != null && vote.isNotEmpty) {
               // Popola voteCounts
               voteCounts['v-$vote'] = (voteCounts['v-$vote'] ?? 0) + 1;
-
             }
           }
         });
@@ -190,19 +189,25 @@ class RealtimeFirebaseService {
         'areCardsRevealed': true,
       });
 
-      var historyRef = roomRef.child('historyVote');
-      final historySnapshot = await historyRef.get();
-      int id = 0;
-      if(historySnapshot.exists && historySnapshot.value != null){
-        var historyData = historySnapshot.value as List;
-        id = historyData.length;
+      int? idSelected = await getStorySelected(roomId);
+      if (idSelected == null) {
+        var historyRef = roomRef.child('historyVote');
+        final historySnapshot = await historyRef.get();
+        int id = 0;
+        if (historySnapshot.exists && historySnapshot.value != null) {
+          var historyData = historySnapshot.value as List;
+          id = historyData.length;
+        }
+        await roomRef
+            .child('historyVote')
+            .child(id.toString())
+            .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
+      } else {
+        await roomRef
+            .child('historyVote')
+            .child(idSelected.toString())
+            .update({'voteCounts': voteCounts});
       }
-      await roomRef
-          .child('historyVote')
-          .child(id.toString())
-          .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
-
-
     } catch (e) {
       // È buona pratica loggare l'errore o rilanciare un'eccezione più specifica
       print("Database error in revealCards: $e");
@@ -236,7 +241,14 @@ class RealtimeFirebaseService {
       if (updates.isNotEmpty) {
         // Esegui solo se ci sono aggiornamenti da fare
         await roomRef.update(updates);
-      } else {}
+        int? idSelected = await getStorySelected(roomId);
+        if (idSelected is int) {
+          await roomRef
+              .child('historyVote')
+              .child(idSelected.toString())
+              .update({'selected': false});
+        }
+      }
     } catch (e) {
       throw Exception("Database error resetting voting: $e");
     }
@@ -396,14 +408,14 @@ class RealtimeFirebaseService {
     await participantSpectatorRef.set(isSpectator);
   }
 
-  Future<void> updateStoryTitle(Room room, VoteHistoryEntry entry, String newTitle) async {
+  Future<void> updateStoryTitle(
+      Room room, VoteHistoryEntry entry, String newTitle) async {
     var roomRef = _getRoomRef(room.id);
     entry.storyTitle = newTitle;
-     await roomRef
+    await roomRef
         .child('historyVote')
         .child(entry.id.toString())
         .set(entry.toJson());
-
   }
 
   Future<void> addHistory(String roomId) async {
@@ -411,20 +423,53 @@ class RealtimeFirebaseService {
     var historyRef = roomRef.child('historyVote');
     final historySnapshot = await historyRef.get();
     int id = 0;
-    if(historySnapshot.exists && historySnapshot.value != null){
+    if (historySnapshot.exists && historySnapshot.value != null) {
       var historyData = historySnapshot.value as List;
       id = historyData.length;
     }
-    await roomRef
-        .child('historyVote')
-        .child(id.toString())
-        .set(VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Story').toJson());
+    await roomRef.child('historyVote').child(id.toString()).set(
+        VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Story')
+            .toJson());
   }
 
   Future<void> deleteHistory(String roomId, VoteHistoryEntry entry) async {
     var roomRef = _getRoomRef(roomId);
-    await roomRef
-        .child('historyVote')
-        .child(entry.id.toString()).remove();
+    await roomRef.child('historyVote').child(entry.id.toString()).remove();
+  }
+
+  Future<void> selectedEntry(String roomId, VoteHistoryEntry entry) async {
+    var roomRef = _getRoomRef(roomId);
+    var historyRef = roomRef.child('historyVote');
+    final historySnapshot = await historyRef.get();
+    if (historySnapshot.exists && historySnapshot.value != null) {
+      var historyData = historySnapshot.value as List;
+      for (var elem in historyData) {
+        if(elem==null)continue;
+        if(elem['id'] is! int){
+          return;
+        }
+        var id = (elem['id'] as int);
+        bool selected = entry.id == id;
+        await roomRef.child('historyVote').child(id.toString()).update({
+          'selected': selected,
+        });
+      }
+    }
+  }
+
+  Future<int?> getStorySelected(String roomId) async {
+    var roomRef = _getRoomRef(roomId);
+    var historyRef = roomRef.child('historyVote');
+    final historySnapshot = await historyRef.get();
+    if (historySnapshot.exists && historySnapshot.value != null) {
+      var historyData = historySnapshot.value as List;
+      for (var elem in historyData) {
+        if(elem == null) continue;
+        if (elem['selected'] is bool && elem['selected'] == true) {
+          return elem['id'] as int;
+        }
+      }
+    }
+    return null;
   }
 }

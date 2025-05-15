@@ -117,9 +117,11 @@ class Room {
 
     List<VoteHistoryEntry> historyVoteList = [];
     try {
-      final historyVotList = data['historyVote'] as List<dynamic>? ?? [];
-      historyVoteList = historyVotList.where((elem)=>elem!=null).map((entry) {
-        Map<String, dynamic> json = Map<String, dynamic>.from(entry ?? {} as Map);
+      final aux = data['historyVote'] as List<dynamic>? ?? [];
+      historyVoteList =
+          aux.where((elem) => elem != null).map((entry) {
+        Map<String, dynamic> json =
+            Map<String, dynamic>.from(entry ?? {} as Map);
         return VoteHistoryEntry.fromJson(json);
       }).toList();
     } catch (err) {
@@ -127,14 +129,13 @@ class Room {
     }
 
     return Room(
-      id: roomId,
-      creatorId: data['creatorId'] as String? ?? '',
-      participants: participantsList,
-      areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
-      cardValues: cardValuesList,
-      currentStoryTitle: data['currentStoryTitle'] as String?,
-      historyVote: historyVoteList
-    );
+        id: roomId,
+        creatorId: data['creatorId'] as String? ?? '',
+        participants: participantsList,
+        areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
+        cardValues: cardValuesList,
+        currentStoryTitle: data['currentStoryTitle'] as String?,
+        historyVote: historyVoteList);
   }
 
   Map<String, dynamic> toJsonForDb() => {
