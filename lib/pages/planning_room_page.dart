@@ -341,7 +341,12 @@ class _PlanningRoomState extends State<PlanningRoom> {
                           ),
                         ),
                         const SizedBox(height: 20),
-                        if(room.currentStoryTitle != null) Text(room.currentStoryTitle!, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),),
+                        if (room.currentStoryTitle != null)
+                          Text(
+                            room.currentStoryTitle!,
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
                         if (cardsRevealed)
                           SizedBox(
                               height: MediaQuery.sizeOf(context).height / 2,
@@ -387,8 +392,15 @@ class _PlanningRoomState extends State<PlanningRoom> {
             onDeleteEntry: (VoteHistoryEntry entry) {
               _firebaseService.deleteHistory(room.id, entry);
             },
-            onSelectedEntry: (VoteHistoryEntry entry){
-              _firebaseService.selectedEntry(room.id, entry);
+            onSelectedEntry: (VoteHistoryEntry entry) {
+              var other = _votingHistory
+                  .firstWhereOrNull((elem) => elem.selected == true)
+                  ?.id;
+              if (entry.id == other) {
+                _firebaseService.resetVoting(roomId: room.id, selected: false);
+              } else {
+                _firebaseService.selectedEntry(room.id, entry);
+              }
             },
           ),
         ],

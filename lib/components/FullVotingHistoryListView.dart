@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+
 import '../models/vote_history_entry.dart';
 import 'HistoryListItemCard.dart';
 
@@ -31,16 +32,14 @@ class FullVotingHistoryListView extends StatelessWidget {
       itemCount: votingHistory.length,
       itemBuilder: (context, index) {
         final entry = votingHistory[index];
-        return HistoryListItemCard( // Utilizza il nuovo widget stateful
-          key: ValueKey(entry.id), // Chiave univoca per ogni elemento
-          entry: entry,
-          onItemTap: onItemTap,
-          onItemDelete: onItemDelete, // Passa il callback
-          onUpdateEntryTitle: onUpdateEntryTitle,
-            onSelectedEntry: onSelectedEntry
-        );
+        return HistoryListItemCard(
+            key: ValueKey(entry.id),
+            entry: entry,
+            onItemTap: onItemTap,
+            onItemDelete: onItemDelete,
+            onUpdateEntryTitle: onUpdateEntryTitle,
+            onSelectedEntry: onSelectedEntry);
       },
     );
   }
 }
-

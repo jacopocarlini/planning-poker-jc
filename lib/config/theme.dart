@@ -145,7 +145,13 @@ final ThemeData appThemeData = ThemeData(
       shadowColor: primaryBlue.withOpacity(0.3),
     ),
   ),
-
+ outlinedButtonTheme: OutlinedButtonThemeData(
+     style: OutlinedButton.styleFrom(
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(10.0), // Slightly less round than cards?
+       ),
+     )
+ ),
   // TextButton Theme (For things that look like links)
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(

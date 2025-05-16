@@ -250,6 +250,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
             width: widget.collapsedWidth,
             padding: const EdgeInsets.all(4.0),
             child: Card(
+              elevation: 2,
               // decoration: BoxDecoration(
               //     borderRadius: BorderRadius.all(Radius.circular(8)),
               //     color: entry.selected ?? false
@@ -274,7 +275,11 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
                       //   overflow: TextOverflow.clip,
                       // ),
                       Text(
-                        (average?.toStringAsFixed(0) ?? '-'),
+                        entry.voteCounts.isEmpty
+                            ? '-'
+                            : average != null
+                                ? average.toStringAsFixed(0)
+                                : 'N/A',
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall

@@ -81,71 +81,59 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Average Vote:',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                          Text(
-                            widget.entry.voteCounts.isEmpty
-                                ? '-'
-                                : average != null
-                                    ? average.toStringAsFixed(2)
-                                    : 'N/A',
-                            style: Theme.of(context)
-                                .textTheme
-                                .headlineSmall,
-                          ),
-                        ],
-                      ),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Average',
+                                style: Theme.of(context).textTheme.labelMedium,
+                              ),
+                              Text(
+                                widget.entry.voteCounts.isEmpty
+                                    ? '-'
+                                    : average != null
+                                        ? average.toStringAsFixed(2)
+                                        : 'N/A',
+                                style: Theme.of(context).textTheme.headlineSmall,
+                              ),
+                            ],
+                          ),
                           if (widget.entry.voteCounts.isNotEmpty)
                             Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ElevatedButton(
-                                child: const Icon(Icons.bar_chart, size: 18),
-                                // label: const Text(''),
-                                onPressed: () {
+                                padding: const EdgeInsets.all(8.0),
+                                child:
+                                IconButton.outlined(onPressed: () {
                                   widget.onItemTap(context, widget.entry);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
-                                    textStyle: const TextStyle(fontSize: 14)),
-                              ),
-                            ),
-                          if (widget.entry.selected == true)
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.how_to_vote, size: 18),
-                              label: Text('Voting'),
-                              onPressed: () {
-                                widget.onSelectedEntry(widget.entry);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  textStyle: const TextStyle(fontSize: 14)),
-                            )
-                          else
-                            ElevatedButton.icon(
-                              icon: const Icon(Icons.how_to_vote, size: 18),
-                              label: const Text('Select to vote'),
-                              onPressed: () {
-                                widget.onSelectedEntry(widget.entry);
-                              },
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: lightBlueGrey,
-
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 12, vertical: 8),
-                                  textStyle: const TextStyle(fontSize: 14)),
+                                }, icon: const Icon(Icons.bar_chart, size: 18))
                             ),
                         ],
                       ),
+                      if (widget.entry.selected == true)
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.how_to_vote, size: 18),
+                          label: Text('Voting'),
+                          onPressed: () {
+                            widget.onSelectedEntry(widget.entry);
+                          },
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              textStyle: const TextStyle(fontSize: 14)),
+                        )
+                      else
+                        OutlinedButton.icon(
+                          icon: const Icon(Icons.how_to_vote, size: 18),
+                          label: const Text('Select to vote'),
+                          onPressed: () {
+                            widget.onSelectedEntry(widget.entry);
+                          },
+                          style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              textStyle: const TextStyle(fontSize: 14)),
+                        ),
                     ],
                   ),
                 ],
@@ -156,15 +144,18 @@ class HistoryListItemCardState extends State<HistoryListItemCard> {
             Positioned(
               top: 0,
               right: 4,
-              child: IconButton(
-                icon: const Icon(Icons.delete_forever, color: Colors.redAccent),
-                iconSize: 24,
-                tooltip: 'Delete Round',
-                splashRadius: 24,
-                onPressed: () {
-                  widget.onItemDelete(widget.entry);
-                },
-              ),
+              child: InkWell(
+                  onTap: () {
+                    widget.onItemDelete(widget.entry);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                        color: Colors.redAccent, shape: BoxShape.circle),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Icon(Icons.close, color: Colors.white, size: 18,),
+                    ),
+                  )),
             ),
         ],
       ),
