@@ -1,4 +1,5 @@
 import 'dart:convert'; // Per jsonDecode, utf8, base64UrlDecode
+import 'dart:html' as html;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart'; // Use this for setUrlStrategy
@@ -12,6 +13,8 @@ import 'components/vote_results_summary_view.dart';
 import 'models/room.dart';
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
+
+const String currentAppVersion = "1.0.4";
 
 // --- Entry Point ---
 void main() async {
@@ -30,6 +33,25 @@ void main() async {
       child: PokerPlanningApp(), // Corrected class name
     ),
   );
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    checkForUpdates(firebaseService); // Controlla all'avvio
+  });
+}
+
+void checkForUpdates(RealtimeFirebaseService firebaseService) async {
+  try {
+    String? version = await firebaseService.getVersion();
+
+    if (version != null && version != currentAppVersion) {
+      html.window.location.reload();
+      print('App reloaded.');
+    } else {
+      print('App up-to-date.');
+    }
+  } catch (e) {
+    print('Error checking for updates: $e');
+  }
 }
 
 // --- App Widget ---

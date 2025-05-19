@@ -76,7 +76,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
         return AlertDialog(
           title: const Text('Confirm Delete'),
           content: Text(
-              'Are you sure you want to delete the round "${entry.storyTitle ?? 'Unnamed Task'}"? This action cannot be undone.'),
+              'Are you sure you want to delete the round "${entry.storyTitle ?? 'Unnamed Task'}"?'),
           actions: <Widget>[
             TextButton(
               child: const Text('Cancel'),
