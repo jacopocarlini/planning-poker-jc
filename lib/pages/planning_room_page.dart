@@ -3,6 +3,7 @@ import 'dart:html' as html; // Needed for window.history, window.location
 
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/HistorySidePanel.dart';
 import 'package:poker_planning/components/participants_grid_view.dart';
 import 'package:poker_planning/components/reveal_reset_button.dart';
 import 'package:poker_planning/components/share_room_dialog_content.dart';
@@ -14,6 +15,8 @@ import 'package:poker_planning/models/room.dart';
 import 'package:poker_planning/services/firebase_service.dart';
 import 'package:poker_planning/services/user_preferences_service.dart';
 import 'package:provider/provider.dart';
+
+import '../models/vote_history_entry.dart';
 
 // --- Planning Room Widget ---
 class PlanningRoom extends StatefulWidget {
@@ -47,6 +50,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   String? _selectedVote;
   bool _isLoading = true;
   bool _presenceSetupDone = false;
+  List<VoteHistoryEntry> _votingHistory = [];
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -71,67 +75,64 @@ class _PlanningRoomState extends State<PlanningRoom> {
     });
 
     _roomSubscription =
-        _firebaseService.getRoomStream(widget.roomId).listen((room) async {
-          if (!mounted) return;
+        _firebaseService.getRoomStream(widget.roomId).listen((Room room) async {
+      if (!mounted) return;
 
-          final bool amIStillInRoom =
+      final bool amIStillInRoom =
           room.participants.any((p) => p.id == _myParticipantId);
 
-          if (!amIStillInRoom && _currentRoom != null) {
-            print(
-                "User $_myParticipantId detected removal from room ${widget
-                    .roomId}. Navigating back.");
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('You have been removed from the room.'),
-                backgroundColor: Colors.orangeAccent,
-                duration: Duration(seconds: 3),
-              ),
-            );
-            await _roomSubscription?.cancel();
-            _roomSubscription = null;
-            if (mounted) {
-              Navigator.of(context).pop();
-            }
-            return;
-          }
+      if (!amIStillInRoom && _currentRoom != null) {
+        print(
+            "User $_myParticipantId detected removal from room ${widget.roomId}. Navigating back.");
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You have been removed from the room.'),
+            backgroundColor: Colors.orangeAccent,
+            duration: Duration(seconds: 3),
+          ),
+        );
+        await _roomSubscription?.cancel();
+        _roomSubscription = null;
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+        return;
+      }
 
-          setState(() {
-            _currentRoom = room;
-              _me = room.participants
-                  .firstWhereOrNull((p) => p.id == _myParticipantId);
-            if (!room.areCardsRevealed) {
-              _selectedVote = _me?.vote;
-            } else {
-              _selectedVote = room.participants
-                  .firstWhereOrNull((p) => p.id == _myParticipantId)
-                  ?.vote;
-            }
-            _isLoading = false;
-          });
-        }, onError: (error) {
-          if (!mounted) return;
-          print("Error in room stream for ${widget.roomId}: $error");
-          setState(() {
-            _isLoading = false;
-            _currentRoom = null;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text(
-                  'Error loading room: $error. You might need to leave.'),
-              backgroundColor: Colors.red));
-        }, onDone: () {
-          if (!mounted) return;
-          print("Room stream for ${widget.roomId} closed.");
-          if (ModalRoute
-              .of(context)
-              ?.isCurrent ?? false) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                content: Text('Connection to the room closed.'),
-                backgroundColor: Colors.grey));
-            Navigator.of(context).pop();
-          }
-        });
+      setState(() {
+        _currentRoom = room;
+        _me =
+            room.participants.firstWhereOrNull((p) => p.id == _myParticipantId);
+        if (!room.areCardsRevealed) {
+          _selectedVote = _me?.vote;
+        } else {
+          _selectedVote = room.participants
+              .firstWhereOrNull((p) => p.id == _myParticipantId)
+              ?.vote;
+        }
+        _votingHistory = room.historyVote;
+        _isLoading = false;
+      });
+    }, onError: (error) {
+      if (!mounted) return;
+      print("Error in room stream for ${widget.roomId}: $error");
+      setState(() {
+        _isLoading = false;
+        _currentRoom = null;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Error loading room: $error. You might need to leave.'),
+          backgroundColor: Colors.red));
+    }, onDone: () {
+      if (!mounted) return;
+      print("Room stream for ${widget.roomId} closed.");
+      if (ModalRoute.of(context)?.isCurrent ?? false) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Connection to the room closed.'),
+            backgroundColor: Colors.grey));
+        Navigator.of(context).pop();
+      }
+    });
   }
 
   void _updatePageUrlIfNeeded() {
@@ -193,6 +194,23 @@ class _PlanningRoomState extends State<PlanningRoom> {
           content: Text('Failed to reveal cards: $e'),
           backgroundColor: Colors.red));
     }
+    setState(() {
+      final Map<String, int> voteCounts = {};
+      final List<double> numericVotes = [];
+      final participantsWhoVoted = _currentRoom?.participants
+              .where((p) => p.vote != null && p.vote!.isNotEmpty)
+              .toList() ??
+          [];
+      for (var p in participantsWhoVoted) {
+        final vote = p.vote!;
+        voteCounts[vote] = (voteCounts[vote] ?? 0) + 1;
+        final numericValue = double.tryParse(vote);
+        if (numericValue != null) {
+          numericVotes.add(numericValue);
+        }
+      }
+      // _votingHistory.add(VoteHistoryEntry(voteCounts: voteCounts));
+    });
   }
 
   Future<void> _resetVoting() async {
@@ -253,14 +271,13 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
 
     final participants =
-    room.participants.where((p) => !p.isSpectator).toList();
-    final spectators =
-    room.participants.where((p) => p.isSpectator).toList();
+        room.participants.where((p) => !p.isSpectator).toList();
+    final spectators = room.participants.where((p) => p.isSpectator).toList();
     final cardValues = room.cardValues;
     final cardsRevealed = room.areCardsRevealed;
 
     final bool someoneVoted =
-    room.participants.any((p) => p.vote != null && p.vote!.isNotEmpty);
+        room.participants.any((p) => p.vote != null && p.vote!.isNotEmpty);
     final bool canReveal = !cardsRevealed && someoneVoted;
     final bool canReset = cardsRevealed;
 
@@ -278,78 +295,116 @@ class _PlanningRoomState extends State<PlanningRoom> {
           const SizedBox(width: 20),
         ],
       ),
-      body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Stack(
-              children: [
-              Positioned(left: 0, top: 0,
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12.0),
-                        child: Text("👀 Spectators: ${spectators.length}",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                      ),
-                      ...spectators.map((elem)=> Text(elem.name))
-                    ],
-                  ),
-                ),
-              ),
-              ),
-      Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: ParticipantsGridView(
-                    participants: participants,
-                    cardsRevealed: cardsRevealed,
-                    myParticipantId: _myParticipantId,
-                    onKickParticipant: _showKickConfirmationDialog,
-                    // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              if (cardsRevealed)
-                SizedBox(
-                    height: MediaQuery
-                        .sizeOf(context)
-                        .height / 2,
-                    child: VoteResultsSummaryView(room: room))
-              else
-                if (_me?.isSpectator == false)
-                  VotingCardsRow(
-                    cardValues: cardValues,
-                    selectedVote: _selectedVote,
-                    cardsRevealed: cardsRevealed,
-                    onVoteSelected: _selectVote,
-                  ),
-              const SizedBox(height: 20),
-              if (_me?.isSpectator == false)
-                Align(
-                  widthFactor: 1,
-                  child: RevealResetButton(
-                    cardsRevealed: cardsRevealed,
-                    canReveal: canReveal,
-                    canReset: canReset,
-                    onReveal: _revealCards,
-                    onReset: _resetVoting,
-                  ),
-                ),
-              const SizedBox(height: 20),
-            ],
+      body: Row(
+        children: [
+          SizedBox(
+            width: 20,
           ),
-        ),
+          Expanded(
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  top: 10,
+                  child: Card(
+                    elevation: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Column(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Text("👀 Spectators: ${spectators.length}",
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                          ),
+                          ...spectators.map((elem) => Text(elem.name))
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 1000),
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: SingleChildScrollView(
+                            child: ParticipantsGridView(
+                              participants: participants,
+                              cardsRevealed: cardsRevealed,
+                              myParticipantId: _myParticipantId,
+                              onKickParticipant: _showKickConfirmationDialog,
+                              // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        if (room.currentStoryTitle != null)
+                          Text(
+                            room.currentStoryTitle!,
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                        if (cardsRevealed)
+                          SizedBox(
+                              height: MediaQuery.sizeOf(context).height / 2,
+                              child: VoteResultsSummaryView(room: room))
+                        else if (_me?.isSpectator == false)
+                          VotingCardsRow(
+                            cardValues: cardValues,
+                            selectedVote: _selectedVote,
+                            cardsRevealed: cardsRevealed,
+                            onVoteSelected: _selectVote,
+                          ),
+                        const SizedBox(height: 20),
+                        if (_me?.isSpectator == false)
+                          Align(
+                            widthFactor: 1,
+                            child: RevealResetButton(
+                              cardsRevealed: cardsRevealed,
+                              canReveal: canReveal,
+                              canReset: canReset,
+                              onReveal: _revealCards,
+                              onReset: _resetVoting,
+                            ),
+                          ),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          HistorySidePanel(
+            votingHistory: _votingHistory,
+            collapsedWidth: 60,
+            expandedWidth: 400,
+            onUpdateEntryTitle:
+                (VoteHistoryEntry entry, String newTitle) async {
+              await _firebaseService.updateStoryTitle(room, entry, newTitle);
+            },
+            onAddNewHistoryEntry: () {
+              _firebaseService.addHistory(room.id);
+            },
+            onDeleteEntry: (VoteHistoryEntry entry) {
+              _firebaseService.deleteHistory(room.id, entry);
+            },
+            onSelectedEntry: (VoteHistoryEntry entry) {
+              var other = _votingHistory
+                  .firstWhereOrNull((elem) => elem.selected == true)
+                  ?.id;
+              if (entry.id == other) {
+                _firebaseService.resetVoting(roomId: room.id, selected: false);
+              } else {
+                _firebaseService.selectedEntry(room.id, entry);
+              }
+            },
+          ),
+        ],
       ),
-      ],
-    ),)
-    ,
     );
   }
 
@@ -357,22 +412,21 @@ class _PlanningRoomState extends State<PlanningRoom> {
     final roomUrl = '${html.window.location.origin}/room/${widget.roomId}';
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: const Text('Share Room'),
-            shape:
+      builder: (context) => AlertDialog(
+        title: const Text('Share Room'),
+        shape:
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.0)),
-            content: ShareRoomDialogContent(
-              // Usa il widget per il contenuto
-              roomUrl: roomUrl,
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Close'),
-              ),
-            ],
+        content: ShareRoomDialogContent(
+          // Usa il widget per il contenuto
+          roomUrl: roomUrl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
           ),
+        ],
+      ),
     );
   }
 
@@ -392,8 +446,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
-  Future<void> _showKickConfirmationDialog(String participantIdToKick,
-      String participantName) async {
+  Future<void> _showKickConfirmationDialog(
+      String participantIdToKick, String participantName) async {
     if (participantIdToKick == _myParticipantId) return;
     final bool? confirmed = await showDialog<bool>(
       context: context,
@@ -427,8 +481,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
-  Future<void> _kickParticipant(String participantIdToKick,
-      String participantName) async {
+  Future<void> _kickParticipant(
+      String participantIdToKick, String participantName) async {
     final messenger = ScaffoldMessenger.of(context);
     print(
         'Kicking participant $participantIdToKick from room ${widget.roomId}');

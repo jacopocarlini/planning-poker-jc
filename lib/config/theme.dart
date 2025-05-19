@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 // Helper function to create a MaterialColor from a single Color.
@@ -30,6 +31,7 @@ MaterialColor createMaterialColor(Color color) {
 const Color primaryBlue = Color(0xFF4A90E2); // Main blue from banner/buttons
 const Color lightBlue = Color(0xFF5D9FEC);
 const Color lightBlueGrey = Color(0xFF9EC5F1);
+const Color lightBlueGrey2 = Color(0xFFC5D6EA);
 const Color lightGreyBackground = Color(0xFFF8F9FA); // Very light main background
 const Color cardWhite = Colors.white;
 const Color darkText = Color(0xFF4A4A4A); // Dark grey for text
@@ -143,7 +145,13 @@ final ThemeData appThemeData = ThemeData(
       shadowColor: primaryBlue.withOpacity(0.3),
     ),
   ),
-
+ outlinedButtonTheme: OutlinedButtonThemeData(
+     style: OutlinedButton.styleFrom(
+       shape: RoundedRectangleBorder(
+         borderRadius: BorderRadius.circular(10.0), // Slightly less round than cards?
+       ),
+     )
+ ),
   // TextButton Theme (For things that look like links)
   textButtonTheme: TextButtonThemeData(
     style: TextButton.styleFrom(
@@ -243,6 +251,6 @@ final ThemeData appThemeData = ThemeData(
 
   scrollbarTheme: const ScrollbarThemeData(
     thumbVisibility: WidgetStatePropertyAll(true),
-  )
-
+  ),
+  dividerColor: CupertinoColors.lightBackgroundGray
 );

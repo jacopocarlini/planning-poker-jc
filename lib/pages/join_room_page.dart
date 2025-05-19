@@ -221,7 +221,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
         });
         messenger.showSnackBar(
           SnackBar(
-              content: Text('Room ${widget.roomId} not found or unable to join.'),
+              content: Text('Room not found or unable to join.'),
               backgroundColor: Colors.orange),
         );
         return; // Esce dalla funzione
