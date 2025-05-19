@@ -493,4 +493,8 @@ class RealtimeFirebaseService {
     }
     return null;
   }
+
+  Future<String?> getVersion() async {
+    return await _database.ref('version').get().then((value) => value.value as String?);
+  }
 }
