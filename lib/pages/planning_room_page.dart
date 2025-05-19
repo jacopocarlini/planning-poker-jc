@@ -359,17 +359,16 @@ class _PlanningRoomState extends State<PlanningRoom> {
                             onVoteSelected: _selectVote,
                           ),
                         const SizedBox(height: 20),
-                        if (_me?.isSpectator == false)
-                          Align(
-                            widthFactor: 1,
-                            child: RevealResetButton(
-                              cardsRevealed: cardsRevealed,
-                              canReveal: canReveal,
-                              canReset: canReset,
-                              onReveal: _revealCards,
-                              onReset: _resetVoting,
-                            ),
+                        Align(
+                          widthFactor: 1,
+                          child: RevealResetButton(
+                            cardsRevealed: cardsRevealed,
+                            canReveal: canReveal,
+                            canReset: canReset,
+                            onReveal: _revealCards,
+                            onReset: _resetVoting,
                           ),
+                        ),
                         const SizedBox(height: 20),
                       ],
                     ),
