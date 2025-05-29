@@ -7,6 +7,7 @@ class Room {
   final String creatorId;
   final List<Participant> participants;
   final bool areCardsRevealed;
+  final bool isPersistent;
   final List<String> cardValues;
   final String? currentStoryTitle;
   final List<VoteHistoryEntry> historyVote;
@@ -15,6 +16,7 @@ class Room {
     required this.id,
     required this.creatorId,
     required this.participants,
+    this.isPersistent = false,
     this.areCardsRevealed = false,
     this.cardValues = const ['0', '1', '2', '3', '5', '8', '13', '?', '☕'],
     this.currentStoryTitle,
@@ -37,6 +39,7 @@ class Room {
     String? creatorId,
     List<Participant>? participants,
     bool? areCardsRevealed,
+    bool? isPersistent,
     List<String>? cardValues,
   }) {
     return Room(
@@ -44,6 +47,7 @@ class Room {
       creatorId: creatorId ?? this.creatorId,
       participants: participants ?? this.participants,
       areCardsRevealed: areCardsRevealed ?? this.areCardsRevealed,
+      isPersistent: isPersistent ?? this.isPersistent,
       cardValues: cardValues ?? this.cardValues,
     );
   }
@@ -61,6 +65,10 @@ class Room {
     }
 
     // Ora sappiamo che value è una Map, possiamo fare il cast sicuro
+    return Room.fromMap(value, roomId);
+  }
+
+  factory Room.fromMap(Map<dynamic, dynamic> value, String roomId) {
     final data = Map<String, dynamic>.from(value as Map);
 
     final participantsMap =
@@ -132,6 +140,7 @@ class Room {
         creatorId: data['creatorId'] as String? ?? '',
         participants: participantsList,
         areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
+        isPersistent: data['isPersistent'] as bool? ?? false,
         cardValues: cardValuesList,
         currentStoryTitle: data['currentStoryTitle'] as String?,
         historyVote: historyVoteList);
@@ -143,6 +152,7 @@ class Room {
         'participants': Map.fromEntries(
             participants.map((p) => MapEntry(p.id, p.toJson()))),
         'areCardsRevealed': areCardsRevealed,
+        'isPersistent': isPersistent,
         'cardValues': cardValues,
         'currentStoryTitle': currentStoryTitle,
         'historyVote': Map.fromEntries(historyVote.map((v) {

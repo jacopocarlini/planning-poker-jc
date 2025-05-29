@@ -51,6 +51,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _isLoading = true;
   bool _presenceSetupDone = false;
   List<VoteHistoryEntry> _votingHistory = [];
+  bool _isPersistent = false;
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -101,6 +102,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
       setState(() {
         _currentRoom = room;
+        _isPersistent = room.isPersistent;
         _me =
             room.participants.firstWhereOrNull((p) => p.id == _myParticipantId);
         if (!room.areCardsRevealed) {
@@ -148,11 +150,14 @@ class _PlanningRoomState extends State<PlanningRoom> {
   }
 
   @override
-  void dispose() {
+  Future<void> dispose() async {
     _roomSubscription?.cancel();
     _roomSubscription = null;
     // _nameController.dispose(); // Non più usato
+    await _firebaseService.removeParticipant(
+        widget.roomId, _myParticipantId);
     super.dispose();
+
   }
 
   Future<void> _selectVote(String value) async {
@@ -286,7 +291,17 @@ class _PlanningRoomState extends State<PlanningRoom> {
         title: Text('Planning Poker ♠️'),
         // Show user's name
         actions: [
-          UserProfileChip(onTap: _saveProfile),
+          UserProfileChip(
+            onTap: _saveProfile,
+            isPersistent: room.creatorId == _myParticipantId ? _isPersistent : null,
+            onPersist: (bool value) {
+              setState(() {
+                _isPersistent = value;
+              });
+              _firebaseService.setPersistent(
+                  roomId: room.id, isPersistent: value);
+            },
+          ),
           ElevatedButton.icon(
             icon: const Icon(Icons.add),
             label: const Text('Invite Teammates'),

@@ -105,7 +105,7 @@ class PokerPlanningApp extends StatelessWidget {
             builder: (context) => Scaffold(
                 appBar: AppBar(
                   title: const Text('Planning Poker ♠️'),
-                  automaticallyImplyLeading: false,
+                  automaticallyImplyLeading: true,
                   actions: [
                     ElevatedButton.icon(
                       onPressed: () {

@@ -30,17 +30,14 @@ class RealtimeFirebaseService {
     deleteEmptyRooms();
   }
 
-  // Genera ID casuale per gli utenti "guest"
-  String _generateUserId() {
-    return "user_${Random().nextInt(9999999).toString().padLeft(7, '0')}";
-  }
-
   // Create a new room
   Future<Room> createRoom(
       {required String creatorName,
       required bool isSpectator,
-      required List<String> cardValues}) async {
-    var creatorId = _generateUserId(); // ID casuale per il creatore
+      required List<String> cardValues,
+      required bool isPersistent}) async {
+    String creatorId =
+        (await _prefsService.getId()) ?? ''; // ID casuale per il creatore
     if (await _prefsService.hasId()) {
       creatorId = (await _prefsService.getId())!;
     }
@@ -57,7 +54,9 @@ class RealtimeFirebaseService {
     final newRoom = Room(
         id: roomId,
         creatorId: creatorId,
-        participants: [creator], // Inizia con il creatore,
+        isPersistent: isPersistent,
+        participants: [creator],
+        // Inizia con il creatore,
         cardValues: cardValues);
 
     try {
@@ -66,6 +65,10 @@ class RealtimeFirebaseService {
     } catch (e) {
       throw Exception("Database error during room creation: $e");
     }
+  }
+
+  static String generateUserId() {
+    return "user_${Random().nextInt(9999999).toString().padLeft(7, '0')}";
   }
 
   // Join an existing room
@@ -82,7 +85,7 @@ class RealtimeFirebaseService {
         return null;
       }
 
-      var participantId = _generateUserId(); // Nuovo ID casuale
+      var participantId = (await _prefsService.getId()) ?? generateUserId();
       if (await _prefsService.hasId()) {
         participantId = (await _prefsService.getId())!;
       }
@@ -220,7 +223,8 @@ class RealtimeFirebaseService {
   }
 
   // Reset voting (hide cards, clear votes)
-  Future<void> resetVoting({required String roomId, bool selected = false}) async {
+  Future<void> resetVoting(
+      {required String roomId, bool selected = false}) async {
     final roomRef = _getRoomRef(roomId);
 
     try {
@@ -246,7 +250,7 @@ class RealtimeFirebaseService {
         await roomRef.update(updates);
         int? idSelected = await getStorySelected(roomId);
         if (idSelected is int) {
-          if(!selected) roomRef.child('currentStoryTitle').set('');
+          if (!selected) roomRef.child('currentStoryTitle').set('');
           await roomRef
               .child('historyVote')
               .child('v-' + idSelected.toString())
@@ -285,9 +289,15 @@ class RealtimeFirebaseService {
       // When the client disconnects, remove their data from the participants list
       await participantRef.onDisconnect().remove();
 
+      final isPersistent =
+          await _getRoomRef(roomId).child('isPersistent').get();
+
       final participantsSnapshot =
           await _getRoomRef(roomId).child('participants').get();
-      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map)) {
+
+      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map) &&
+          isPersistent.exists &&
+          isPersistent.value == false) {
         await _getRoomRef(roomId).remove();
       }
     } catch (e) {
@@ -307,7 +317,11 @@ class RealtimeFirebaseService {
 
       final participantsSnapshot =
           await _getRoomRef(roomId).child('participants').get();
-      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map)) {
+      DataSnapshot isPersistent =
+          await _getRoomRef(roomId).child('isPersistent').get();
+      if (!(participantsSnapshot.exists && participantsSnapshot.value is Map) &&
+          isPersistent.exists &&
+          isPersistent.value == false) {
         await _getRoomRef(roomId).remove();
       }
     } catch (e) {}
@@ -363,7 +377,10 @@ class RealtimeFirebaseService {
           }
 
           // 5. Se vuota, elimina la stanza
-          if (isEmpty) {
+          DataSnapshot isPersistent =
+              await _getRoomRef(roomId).child('isPersistent').get();
+
+          if (isEmpty && isPersistent.exists && isPersistent.value == false) {
             try {
               await _roomsRef.child(roomId).remove();
               deletedCount++;
@@ -466,7 +483,9 @@ class RealtimeFirebaseService {
         bool selected = entry.id == id;
         if (elem['selected'] == selected) continue;
         if (selected)
-          roomRef.child('currentStoryTitle').set((elem['storyTitle'] ??'Unnamed Task' ) as String);
+          roomRef
+              .child('currentStoryTitle')
+              .set((elem['storyTitle'] ?? 'Unnamed Task') as String);
         roomRef.child('historyVote').child('v-' + id.toString()).update({
           'selected': selected,
         });
@@ -495,6 +514,91 @@ class RealtimeFirebaseService {
   }
 
   Future<String?> getVersion() async {
-    return await _database.ref('version').get().then((value) => value.value as String?);
+    return await _database
+        .ref('version')
+        .get()
+        .then((value) => value.value as String?);
+  }
+
+
+  Stream<List<Room>> getCreatedRoomsStream() {
+    // 1. Ottieni l'ID utente corrente in modo asincrono una sola volta.
+    // Creiamo uno stream che emette l'ID utente e poi lo usiamo per costruire lo stream di Firebase.
+    return Stream.fromFuture(UserPreferencesService().getId())
+        .asyncExpand((String? currentUserId) { // asyncExpand è come switchMap in Rx
+      if (currentUserId == null || currentUserId.isEmpty) {
+        // Se non c'è utente, ritorna uno stream che emette una lista vuota e si completa.
+        return Stream.value([]);
+      }
+
+      // 2. Ora che abbiamo currentUserId, creiamo la query per lo stream di Firebase.
+      Query query = _database
+          .ref('rooms')
+          .orderByChild('creatorId') // Assicurati che questo campo esista nei tuoi dati room
+          .equalTo(currentUserId);   // Filtra per l'utente corrente
+
+      // 3. Ascolta gli eventi .onValue che emettono DatabaseEvent
+      return query.onValue.map((DatabaseEvent event) {
+        final List<Room> rooms = [];
+        if (event.snapshot.value != null) {
+          // Il valore è spesso un Map<String, dynamic> o Map<dynamic, dynamic>
+          final data = event.snapshot.value;
+
+          if (data is Map) {
+            final Map<dynamic, dynamic> roomsMap = data;
+            roomsMap.forEach((roomId, roomData) {
+              if (roomData is Map) {
+                final roomMap = Map<String, dynamic>.from(roomData);
+                // Il filtro server-side .equalTo(currentUserId) dovrebbe già aver fatto questo,
+                // ma un controllo client-side aggiuntivo non fa male, specialmente se
+                // la struttura dei dati o le regole potrebbero permettere altro.
+                if (roomMap['creatorId'] == currentUserId && roomMap['isPersistent'] == true) {
+                  rooms.add(Room.fromMap(roomMap, roomId as String));
+                }
+              }
+            });
+          } else {
+            // Potrebbe esserci un caso in cui il risultato non è una mappa,
+            // ad esempio se non ci sono stanze o la struttura è diversa.
+            // Gestiscilo se necessario.
+            print("Snapshot value is not a Map: $data");
+          }
+        }
+        // Ordina le stanze, ad esempio per ID, nome o data di creazione
+        rooms.sort((a, b) => (a.id.toLowerCase()).compareTo(b.id.toLowerCase()));
+        return rooms;
+      });
+    });
+  }
+
+  Future<void> deleteRoom(String roomId) async {
+    try {
+      // Elimina la stanza principale
+      await _getRoomRef(roomId).remove();
+
+      // Considera di eliminare anche dati correlati se esistono in nodi separati, es:
+      // await _db.child('room_members').child(roomId).remove();
+      // await _db.child('stories').child(roomId).remove();
+      // await _db.child('votes').child(roomId).remove();
+
+      print('Room $roomId deleted successfully.');
+    } catch (e) {
+      print('Error deleting room $roomId: $e');
+      throw Exception('Failed to delete room: $e');
+    }
+  }
+
+  Future<void> setPersistent(
+      {required String roomId, bool? isPersistent}) async {
+    // Riferimento diretto al campo 'vote' di quel partecipante
+    final isPersistentRef =
+    _getRoomRef(roomId).child('isPersistent');
+
+    try {
+      // Scrive il voto (o null per cancellare). Nessun controllo su chi lo fa.
+      await isPersistentRef.set(isPersistent ?? false);
+    } catch (e) {
+      throw Exception("Database error set isPersistent: $e");
+    }
   }
 }

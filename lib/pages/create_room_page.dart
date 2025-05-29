@@ -28,6 +28,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _isSpectator = false;
+  bool _isPersistent = false;
 
 
   // Stato per memorizzare il nome del set di carte selezionato
@@ -114,13 +115,27 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
                 ],),
                 const SizedBox(height: 24),
+                Row(children: [
+                  Switch(value: _isPersistent, onChanged: (value){
+                    setState(() {
+                      _isPersistent = value;
+                    });
+                  }),
+
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: Text("Persistent Room"),
+                  ),
+
+                ],),
+                const SizedBox(height: 24),
 
                 _isLoading
                     ? const CircularProgressIndicator()
                     : Container(
                       child: ElevatedButton(
                         style: ElevatedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(50),
+                      minimumSize: Size(400, 50)
                                         ),
                                         onPressed: _createRoom,
                                         child: const Text('Create Room'),
@@ -164,9 +179,10 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         final room = await firebaseService.createRoom(
           creatorName: username,
           isSpectator: _isSpectator,
+          isPersistent: _isPersistent,
           cardValues: selectedCards, // Passa il set di carte
         );
-        navigator.pushReplacementNamed(
+        navigator.pushNamed(
           '/room/${room.id}',
           arguments: {
             'roomId': room.id,
@@ -186,6 +202,10 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               content: Text('Failed to create room: $e'),
               backgroundColor: Colors.red),
         );
+      } finally {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }

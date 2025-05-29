@@ -3,10 +3,14 @@ import 'package:poker_planning/services/user_preferences_service.dart';
 
 class UserProfileChip extends StatefulWidget {
   final VoidCallback? onTap; // Azione da eseguire al tap
+  final bool? isPersistent; // Azione da eseguire al tap
+  final Function? onPersist; // Azione da eseguire al tap
 
   const UserProfileChip({
     Key? key,
     this.onTap, // Rendi opzionale la callback
+    this.isPersistent, // Rendi opzionale la callback
+    this.onPersist, // Rendi opzionale la callback
   }) : super(key: key);
 
   @override
@@ -17,6 +21,7 @@ class _UserProfileChipState extends State<UserProfileChip> {
   final _prefsService = UserPreferencesService();
   String? _username;
   bool? _isSpectator;
+  bool? _isPersistent = false;
   bool _isLoading = true;
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
@@ -24,6 +29,9 @@ class _UserProfileChipState extends State<UserProfileChip> {
   @override
   void initState() {
     super.initState();
+    setState(() {
+      _isPersistent = widget.isPersistent;
+    });
     _loadUser();
   }
 
@@ -43,7 +51,7 @@ class _UserProfileChipState extends State<UserProfileChip> {
     } catch (e) {
       if (mounted) {
         setState(() =>
-        _isLoading = false); // Smetti di caricare anche in caso di errore
+            _isLoading = false); // Smetti di caricare anche in caso di errore
       }
     }
   }
@@ -93,18 +101,12 @@ class _UserProfileChipState extends State<UserProfileChip> {
           child: Row(children: [
             CircleAvatar(
               // Puoi personalizzare il colore o usare un'immagine se disponibile
-              backgroundColor: Theme
-                  .of(context)
-                  .colorScheme
-                  .secondaryContainer,
+              backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
               child: Text(
                 _getInitials(_username),
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: Theme
-                      .of(context)
-                      .colorScheme
-                      .onSecondaryContainer,
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
                 ),
               ),
             ),
@@ -114,15 +116,16 @@ class _UserProfileChipState extends State<UserProfileChip> {
               style: const TextStyle(fontWeight: FontWeight.w500),
             ),
           ]
-            // Puoi aggiungere altre personalizzazioni al Chip qui
-            // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          ),
+              // Puoi aggiungere altre personalizzazioni al Chip qui
+              // padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              ),
         ),
       ),
     );
   }
 
-  Future<void> _changeProfile(BuildContext context) async { // 'context' qui è quello di UserProfileChip
+  Future<void> _changeProfile(BuildContext context) async {
+    // 'context' qui è quello di UserProfileChip
     // Pre-carica il valore corrente di _isSpectator se non è già fatto o se vuoi essere sicuro
     // _isSpectator dovrebbe già avere il valore corretto da _loadUsername
     _nameController.text = await _prefsService.getUsername() ?? "Unknown";
@@ -132,9 +135,12 @@ class _UserProfileChipState extends State<UserProfileChip> {
 
     showDialog(
       context: context, // context originale del UserProfileChip
-      builder: (dialogContext) { // dialogContext è il context specifico del dialogo
-        return StatefulBuilder( // <--- AGGIUNGI QUESTO
-          builder: (BuildContext context, StateSetter setStateDialog) { // setStateDialog è per il dialogo
+      builder: (dialogContext) {
+        // dialogContext è il context specifico del dialogo
+        return StatefulBuilder(
+          // <--- AGGIUNGI QUESTO
+          builder: (BuildContext context, StateSetter setStateDialog) {
+            // setStateDialog è per il dialogo
             return AlertDialog(
               title: const Text('Edit your profile'),
               content: Form(
@@ -151,7 +157,9 @@ class _UserProfileChipState extends State<UserProfileChip> {
                         labelText: 'Enter Your Name',
                       ),
                       validator: (value) {
-                        if (value == null || value.isEmpty || value.trim().isEmpty) {
+                        if (value == null ||
+                            value.isEmpty ||
+                            value.trim().isEmpty) {
                           return 'Please enter a valid name';
                         }
                         return null;
@@ -166,9 +174,11 @@ class _UserProfileChipState extends State<UserProfileChip> {
                       child: Row(
                         children: [
                           Switch(
-                            value: _isSpectator ?? false, // Legge direttamente dallo stato del widget padre
+                            value: _isSpectator ?? false,
+                            // Legge direttamente dallo stato del widget padre
                             onChanged: (value) {
-                              setStateDialog(() { // <--- USA setStateDialog QUI
+                              setStateDialog(() {
+                                // <--- USA setStateDialog QUI
                                 // Aggiorna la variabile di stato del widget padre
                                 // Questo farà ri-renderizzare solo il contenuto del StatefulBuilder (quindi il dialogo)
                                 _isSpectator = value;
@@ -181,6 +191,26 @@ class _UserProfileChipState extends State<UserProfileChip> {
                           ),
                         ],
                       ),
+                    ),
+                    _isPersistent == null
+                        ? Container()
+                        :
+                    Row(
+                      children: [
+                        Switch(
+                            value: _isPersistent!,
+                            onChanged: (value) {
+                              setStateDialog(() {
+                                _isPersistent = value;
+                                if (widget.onPersist != null)
+                                  widget.onPersist!(value);
+                              });
+                            }),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: Text("Persistent Room"),
+                        ),
+                      ],
                     )
                   ],
                 ),
@@ -202,16 +232,20 @@ class _UserProfileChipState extends State<UserProfileChip> {
   }
 
 // Il metodo _handleSave rimane quasi invariato, assicurati solo di passare il context corretto per Navigator.pop
-  Future<void> _handleSave(BuildContext dialogContext) async { // Riceve il dialogContext
+  Future<void> _handleSave(BuildContext dialogContext) async {
+    // Riceve il dialogContext
     if (_formKey.currentState!.validate()) {
       await _prefsService.saveUsername(_nameController.text.trim());
-      await _prefsService.saveIsSpectator(_isSpectator ?? false); // _isSpectator è già aggiornato
+      await _prefsService.saveIsSpectator(
+          _isSpectator ?? false); // _isSpectator è già aggiornato
       if (widget.onTap != null) {
         widget.onTap!();
       }
       await _loadUser(); // Ricarica i dati e aggiorna l'UI del UserProfileChip
-      if (Navigator.canPop(dialogContext)) { // Controlla se il dialogo può essere chiuso
-        Navigator.pop(dialogContext); // Usa dialogContext per chiudere il dialogo
+      if (Navigator.canPop(dialogContext)) {
+        // Controlla se il dialogo può essere chiuso
+        Navigator.pop(
+            dialogContext); // Usa dialogContext per chiudere il dialogo
       }
     }
   }

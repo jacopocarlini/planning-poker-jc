@@ -250,7 +250,6 @@ final ThemeData appThemeData = ThemeData(
   ),
 
   scrollbarTheme: const ScrollbarThemeData(
-    thumbVisibility: WidgetStatePropertyAll(true),
   ),
   dividerColor: CupertinoColors.lightBackgroundGray
 );
