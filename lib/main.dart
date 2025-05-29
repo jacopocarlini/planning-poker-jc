@@ -14,7 +14,7 @@ import 'models/room.dart';
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
 
-const String currentAppVersion = "1.0.4";
+const String currentAppVersion = "1.0.5";
 
 // --- Entry Point ---
 void main() async {
