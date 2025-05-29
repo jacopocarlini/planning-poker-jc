@@ -15,6 +15,9 @@ This tool helps Agile teams estimate tasks collaboratively by allowing participa
     *   Standard Deviation (as a measure of consensus).
     *   Vote summary/distribution.
 *   Reset voting for the next estimation round.
+*   Spectator mode
+*   Vote history
+*   History vote
 
 **Live Demo:**
 
