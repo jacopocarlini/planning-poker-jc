@@ -212,13 +212,14 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
         isSpectator: _isSpectator
       );
 
+      setState(() {
+        _isLoading = false; // Resetta il caricamento in caso di errore
+      });
+
       // 3. Controlla il risultato
       if (room == null) {
         // Controlla se il widget è ancora montato prima di mostrare SnackBar/aggiornare state
         if (!mounted) return;
-        setState(() {
-          _isLoading = false;
-        });
         messenger.showSnackBar(
           SnackBar(
               content: Text('Room not found or unable to join.'),
@@ -249,7 +250,6 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
 
       if (participantId == null) {
         if (!mounted) return;
-        setState(() { _isLoading = false; });
         messenger.showSnackBar(
           const SnackBar(
               content: Text('Joined room, but could not identify participant ID.'),
@@ -277,9 +277,7 @@ class _JoinRoomPageState extends State<JoinRoomPage> {
     } catch (e) {
       // Controlla se il widget è ancora montato prima di mostrare SnackBar/aggiornare state
       if (!mounted) return;
-      setState(() {
-        _isLoading = false; // Resetta il caricamento in caso di errore
-      });
+
       messenger.showSnackBar(
         SnackBar(
             content: Text('Failed to join room: ${e.toString()}'), // Mostra l'errore

@@ -151,12 +151,12 @@ class _PlanningRoomState extends State<PlanningRoom> {
 
   @override
   Future<void> dispose() async {
+    super.dispose();
     _roomSubscription?.cancel();
     _roomSubscription = null;
     // _nameController.dispose(); // Non più usato
     await _firebaseService.removeParticipant(
         widget.roomId, _myParticipantId);
-    super.dispose();
 
   }
 

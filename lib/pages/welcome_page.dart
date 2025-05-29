@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../components/user_profile_chip.dart';
+import '../main.dart';
 import '../models/room.dart';
 import '../services/firebase_service.dart';
 
@@ -452,6 +453,14 @@ class _WelcomePageState extends State<WelcomePage> {
                   ?.copyWith(color: Colors.grey[600]),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Version ${currentAppVersion}',
+          style: Theme.of(context)
+              .textTheme
+              .bodySmall
+              ?.copyWith(color: Colors.grey[600]),
         ),
       ],
     );
