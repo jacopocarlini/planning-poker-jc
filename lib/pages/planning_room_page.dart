@@ -5,7 +5,6 @@ import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/HistorySidePanel.dart';
 import 'package:poker_planning/components/participants_grid_view.dart';
-import 'package:poker_planning/components/reveal_reset_button.dart';
 import 'package:poker_planning/components/share_room_dialog_content.dart';
 import 'package:poker_planning/components/user_profile_chip.dart'; // Assicurati che il percorso sia corretto
 import 'package:poker_planning/components/vote_results_summary_view.dart';
@@ -155,9 +154,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _roomSubscription?.cancel();
     _roomSubscription = null;
     // _nameController.dispose(); // Non più usato
-    await _firebaseService.removeParticipant(
-        widget.roomId, _myParticipantId);
-
+    await _firebaseService.removeParticipant(widget.roomId, _myParticipantId);
   }
 
   Future<void> _selectVote(String value) async {
@@ -293,7 +290,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
         actions: [
           UserProfileChip(
             onTap: _saveProfile,
-            isPersistent: room.creatorId == _myParticipantId ? _isPersistent : null,
+            isPersistent:
+                room.creatorId == _myParticipantId ? _isPersistent : null,
             onPersist: (bool value) {
               setState(() {
                 _isPersistent = value;
@@ -351,6 +349,10 @@ class _PlanningRoomState extends State<PlanningRoom> {
                               cardsRevealed: cardsRevealed,
                               myParticipantId: _myParticipantId,
                               onKickParticipant: _showKickConfirmationDialog,
+                              onRevealCards: _revealCards,
+                              onResetVoting: _resetVoting,
+                              canReveal: canReveal,
+                              canReset: canReset,
                               // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
                             ),
                           ),
@@ -373,17 +375,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
                             cardsRevealed: cardsRevealed,
                             onVoteSelected: _selectVote,
                           ),
-                        const SizedBox(height: 20),
-                        Align(
-                          widthFactor: 1,
-                          child: RevealResetButton(
-                            cardsRevealed: cardsRevealed,
-                            canReveal: canReveal,
-                            canReset: canReset,
-                            onReveal: _revealCards,
-                            onReset: _resetVoting,
-                          ),
-                        ),
                         const SizedBox(height: 20),
                       ],
                     ),

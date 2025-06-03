@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/participant_card.dart'; // Assicurati che il percorso sia corretto
+import 'package:poker_planning/components/reveal_reset_button.dart';
 import 'package:poker_planning/models/participant.dart';
 
 class ParticipantsGridView extends StatelessWidget {
@@ -7,8 +8,10 @@ class ParticipantsGridView extends StatelessWidget {
   final bool cardsRevealed;
   final String myParticipantId;
   final Future<void> Function(String participantId, String participantName) onKickParticipant;
-  // Aggiungi isCreator se ParticipantCard ne ha bisogno direttamente o per logica qui
-  // final bool isCreator;
+  final VoidCallback onRevealCards;
+  final VoidCallback onResetVoting;
+  final bool canReveal;
+  final bool canReset;
 
 
   const ParticipantsGridView({
@@ -17,7 +20,10 @@ class ParticipantsGridView extends StatelessWidget {
     required this.cardsRevealed,
     required this.myParticipantId,
     required this.onKickParticipant,
-    // required this.isCreator,
+    required this.onRevealCards,
+    required this.onResetVoting,
+    required this.canReveal,
+    required this.canReset,
   }) : super(key: key);
 
   @override
@@ -31,6 +37,7 @@ class ParticipantsGridView extends StatelessWidget {
         ),
       );
     }
+
 
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
@@ -59,6 +66,17 @@ class ParticipantsGridView extends StatelessWidget {
                 // isCreator: isCreator && participant.id != myParticipantId, // Esempio: creator può kickare altri
               );
             }).toList(),
+          ),
+        ),
+        const SizedBox(height: 30),
+        Align(
+          widthFactor: 1,
+          child: RevealResetButton(
+            cardsRevealed: cardsRevealed,
+            canReveal: canReveal,
+            canReset: canReset,
+            onReveal: onRevealCards,
+            onReset: onResetVoting,
           ),
         ),
       ],
