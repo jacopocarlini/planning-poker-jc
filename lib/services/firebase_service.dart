@@ -433,7 +433,9 @@ class RealtimeFirebaseService {
       Room room, VoteHistoryEntry entry, String newTitle) async {
     var roomRef = _getRoomRef(room.id);
     entry.storyTitle = newTitle;
-    roomRef.child('currentStoryTitle').set(newTitle);
+    if (entry.selected == true) {
+      roomRef.child('currentStoryTitle').set(newTitle);
+    }
 
     await roomRef
         .child('historyVote')
@@ -520,12 +522,12 @@ class RealtimeFirebaseService {
         .then((value) => value.value as String?);
   }
 
-
   Stream<List<Room>> getCreatedRoomsStream() {
     // 1. Ottieni l'ID utente corrente in modo asincrono una sola volta.
     // Creiamo uno stream che emette l'ID utente e poi lo usiamo per costruire lo stream di Firebase.
     return Stream.fromFuture(UserPreferencesService().getId())
-        .asyncExpand((String? currentUserId) { // asyncExpand è come switchMap in Rx
+        .asyncExpand((String? currentUserId) {
+      // asyncExpand è come switchMap in Rx
       if (currentUserId == null || currentUserId.isEmpty) {
         // Se non c'è utente, ritorna uno stream che emette una lista vuota e si completa.
         return Stream.value([]);
@@ -534,8 +536,9 @@ class RealtimeFirebaseService {
       // 2. Ora che abbiamo currentUserId, creiamo la query per lo stream di Firebase.
       Query query = _database
           .ref('rooms')
-          .orderByChild('creatorId') // Assicurati che questo campo esista nei tuoi dati room
-          .equalTo(currentUserId);   // Filtra per l'utente corrente
+          .orderByChild(
+              'creatorId') // Assicurati che questo campo esista nei tuoi dati room
+          .equalTo(currentUserId); // Filtra per l'utente corrente
 
       // 3. Ascolta gli eventi .onValue che emettono DatabaseEvent
       return query.onValue.map((DatabaseEvent event) {
@@ -552,7 +555,8 @@ class RealtimeFirebaseService {
                 // Il filtro server-side .equalTo(currentUserId) dovrebbe già aver fatto questo,
                 // ma un controllo client-side aggiuntivo non fa male, specialmente se
                 // la struttura dei dati o le regole potrebbero permettere altro.
-                if (roomMap['creatorId'] == currentUserId && roomMap['isPersistent'] == true) {
+                if (roomMap['creatorId'] == currentUserId &&
+                    roomMap['isPersistent'] == true) {
                   rooms.add(Room.fromMap(roomMap, roomId as String));
                 }
               }
@@ -565,7 +569,8 @@ class RealtimeFirebaseService {
           }
         }
         // Ordina le stanze, ad esempio per ID, nome o data di creazione
-        rooms.sort((a, b) => (a.id.toLowerCase()).compareTo(b.id.toLowerCase()));
+        rooms
+            .sort((a, b) => (a.id.toLowerCase()).compareTo(b.id.toLowerCase()));
         return rooms;
       });
     });
@@ -591,8 +596,7 @@ class RealtimeFirebaseService {
   Future<void> setPersistent(
       {required String roomId, bool? isPersistent}) async {
     // Riferimento diretto al campo 'vote' di quel partecipante
-    final isPersistentRef =
-    _getRoomRef(roomId).child('isPersistent');
+    final isPersistentRef = _getRoomRef(roomId).child('isPersistent');
 
     try {
       // Scrive il voto (o null per cancellare). Nessun controllo su chi lo fa.
