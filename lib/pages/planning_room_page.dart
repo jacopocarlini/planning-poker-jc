@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/HistorySidePanel.dart';
@@ -51,6 +52,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _presenceSetupDone = false;
   List<VoteHistoryEntry> _votingHistory = [];
   bool _isPersistent = false;
+  int? notifications = 0;
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -65,6 +67,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _subscribeToRoomUpdates();
     _setupPresenceIfNeeded();
     _updatePageUrlIfNeeded();
+    startNudgeListener(widget.currentParticipantId);
   }
 
   void _subscribeToRoomUpdates() {
@@ -346,6 +349,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                           child: SingleChildScrollView(
                             child: ParticipantsGridView(
                               participants: participants,
+                              notifications: notifications,
                               cardsRevealed: cardsRevealed,
                               myParticipantId: _myParticipantId,
                               onKickParticipant: _showKickConfirmationDialog,
@@ -502,6 +506,108 @@ class _PlanningRoomState extends State<PlanningRoom> {
       messenger.showSnackBar(SnackBar(
           content: Text('Failed to remove "$participantName": $e'),
           backgroundColor: Colors.red));
+    }
+  }
+
+  StreamSubscription? _webNudgeListenerSubscription;
+  String? _currentUserId; // ID dell'utente loggato
+
+  void startNudgeListener(String currentUserId) {
+    _currentUserId = currentUserId;
+    if (_currentUserId == null || _currentUserId!.isEmpty) {
+      return;
+    }
+    _webNudgeListenerSubscription?.cancel();
+    _webNudgeListenerSubscription = FirebaseFirestore.instance
+        .collection('webNudges')
+        .where('recipientId', isEqualTo: _currentUserId)
+        .where('read', isEqualTo: false)
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .listen((QuerySnapshot snapshot) async {
+      if (snapshot.docs.isNotEmpty) {
+        setState(() {
+          notifications = snapshot.docs.length;
+        });
+      }
+
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final nudgeId = doc.id;
+
+        final title = data['title'] as String? ?? 'Trill!';
+        final body = data['body'] as String? ?? 'Someone sent you a trill.';
+
+        await FirebaseFirestore.instance
+            .collection('webNudges')
+            .doc(nudgeId)
+            .delete();
+        // .update({'read': true}); // Marca la notifica come letta();
+
+        // Mostra la notifica usando l'API del Browser
+        showBrowserNotification(title: title, body: body, data: data);
+      }
+    }, onError: (error) {
+      print("Error in web nudge listener: $error");
+    });
+    print("Web Nudge listener started for user: $_currentUserId");
+  }
+
+  void stopWebNudgeListener() {
+    _webNudgeListenerSubscription?.cancel();
+    print("Web Nudge listener stopped.");
+  }
+
+// Funzione helper per mostrare notifiche browser
+  void showBrowserNotification(
+      {required String title,
+      required String body,
+      Map<String, dynamic>? data}) {
+    // print("Attempting to show browser notification: '$title'"); // DEBUG
+    if (html.Notification.supported) {
+      // print("Browser notifications are supported."); // DEBUG
+      html.Notification.requestPermission().then((permission) {
+        print("Permission status: $permission"); // DEBUG: MOLTO IMPORTANTE
+        if (permission == 'granted') {
+          print("Permission GRANTED. Creating notification..."); // DEBUG
+          try {
+            final notification = html.Notification(
+              title,
+              body: body,
+              tag: 'web-nudge-${DateTime.now().millisecondsSinceEpoch}',
+              // Tag univoco per evitare sovrapposizioni se invii rapidamente
+              icon: '/icons/icon-192.png', // Opzionale: aggiungi un'icona
+              // renotify: true, // Opzionale: se vuoi che una notifica con lo stesso tag faccia rumore/vibrazione di nuovo
+            );
+            print(
+                "Notification object created: ${notification.title}"); // DEBUG
+
+            notification.onClick.listen((event) {
+              // print('Browser notification clicked. Data: $data');
+              // html.window.focus(); // Porta la finestra/scheda in primo piano
+              // Qui potresti navigare o fare altro in base a `data`
+              // Esempio: se data contiene un 'roomId', potresti voler navigare a quella stanza
+            });
+            notification.onShow.listen((event) {
+              // print("Notification successfully SHOWN to the user."); // DEBUG
+            });
+            notification.onError.listen((event) {
+              // Aggiunto gestore errori
+              // print("ERROR showing notification: ${notification.title}, Error: $event");
+            });
+            notification.onClose.listen((event) {
+              // print("Notification closed: ${notification.title}");
+            });
+          } catch (e) {
+            print("Exception while creating html.Notification: $e"); // DEBUG
+          }
+        } else {
+          print(
+              'Permesso notifiche browser NON concesso (status: $permission).');
+        }
+      });
+    } else {
+      print('API Notification del browser non supportata.');
     }
   }
 }
