@@ -52,7 +52,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _presenceSetupDone = false;
   List<VoteHistoryEntry> _votingHistory = [];
   bool _isPersistent = false;
-  int? notifications = 0;
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -67,7 +66,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _subscribeToRoomUpdates();
     _setupPresenceIfNeeded();
     _updatePageUrlIfNeeded();
-    startNudgeListener(widget.currentParticipantId);
+    // startNudgeListener(widget.currentParticipantId);
   }
 
   void _subscribeToRoomUpdates() {
@@ -117,6 +116,12 @@ class _PlanningRoomState extends State<PlanningRoom> {
         _votingHistory = room.historyVote;
         _isLoading = false;
       });
+
+      if(_currentRoom!.participants
+          .firstWhere((p) => p.id == _myParticipantId) .trill! > 0) {
+        showBrowserNotification(title: 'Trill! 🔔', body: 'Someone sent you a trill!', data: null);
+      }
+
     }, onError: (error) {
       if (!mounted) return;
       print("Error in room stream for ${widget.roomId}: $error");
@@ -349,7 +354,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                           child: SingleChildScrollView(
                             child: ParticipantsGridView(
                               participants: participants,
-                              notifications: notifications,
+                              roomId: room.id,
                               cardsRevealed: cardsRevealed,
                               myParticipantId: _myParticipantId,
                               onKickParticipant: _showKickConfirmationDialog,
@@ -493,8 +498,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
   Future<void> _kickParticipant(
       String participantIdToKick, String participantName) async {
     final messenger = ScaffoldMessenger.of(context);
-    print(
-        'Kicking participant $participantIdToKick from room ${widget.roomId}');
     try {
       await _firebaseService.removeParticipant(
           widget.roomId, participantIdToKick);
@@ -502,7 +505,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
           content: Text('"$participantName" has been removed.'),
           backgroundColor: Colors.green));
     } catch (e) {
-      print("Error kicking participant $participantIdToKick: $e");
       messenger.showSnackBar(SnackBar(
           content: Text('Failed to remove "$participantName": $e'),
           backgroundColor: Colors.red));
@@ -518,6 +520,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
       return;
     }
     _webNudgeListenerSubscription?.cancel();
+
     _webNudgeListenerSubscription = FirebaseFirestore.instance
         .collection('webNudges')
         .where('recipientId', isEqualTo: _currentUserId)
@@ -527,7 +530,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
         .listen((QuerySnapshot snapshot) async {
       if (snapshot.docs.isNotEmpty) {
         setState(() {
-          notifications = snapshot.docs.length;
         });
       }
 
@@ -550,12 +552,10 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }, onError: (error) {
       print("Error in web nudge listener: $error");
     });
-    print("Web Nudge listener started for user: $_currentUserId");
   }
 
   void stopWebNudgeListener() {
     _webNudgeListenerSubscription?.cancel();
-    print("Web Nudge listener stopped.");
   }
 
 // Funzione helper per mostrare notifiche browser
@@ -563,13 +563,10 @@ class _PlanningRoomState extends State<PlanningRoom> {
       {required String title,
       required String body,
       Map<String, dynamic>? data}) {
-    // print("Attempting to show browser notification: '$title'"); // DEBUG
     if (html.Notification.supported) {
       // print("Browser notifications are supported."); // DEBUG
       html.Notification.requestPermission().then((permission) {
-        print("Permission status: $permission"); // DEBUG: MOLTO IMPORTANTE
         if (permission == 'granted') {
-          print("Permission GRANTED. Creating notification..."); // DEBUG
           try {
             final notification = html.Notification(
               title,
@@ -579,8 +576,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
               icon: '/icons/icon-192.png', // Opzionale: aggiungi un'icona
               // renotify: true, // Opzionale: se vuoi che una notifica con lo stesso tag faccia rumore/vibrazione di nuovo
             );
-            print(
-                "Notification object created: ${notification.title}"); // DEBUG
 
             notification.onClick.listen((event) {
               // print('Browser notification clicked. Data: $data');

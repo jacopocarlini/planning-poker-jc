@@ -1,25 +1,28 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math' as math; // Per math.pi
+
 import 'package:flutter/material.dart';
 import 'package:poker_planning/config/geometric_card_pattern_painter.dart';
 import 'package:poker_planning/config/theme.dart'; // Assicurati che primaryBlue sia definito qui
 import 'package:poker_planning/models/participant.dart';
+import 'package:poker_planning/services/firebase_service.dart';
+import 'package:provider/provider.dart';
 
 import '../services/user_preferences_service.dart';
 
 class ParticipantCard extends StatefulWidget {
   final Participant participant;
+  final String roomId;
   final bool cardsRevealed;
   final bool isMe;
-  final int? notifications;
   final Future<void> Function(String participantId, String participantName)
       onKick;
 
   const ParticipantCard({
     super.key,
     required this.participant,
+    required this.roomId,
     required this.cardsRevealed,
     required this.isMe,
-    required this.notifications,
     required this.onKick,
   });
 
@@ -27,10 +30,84 @@ class ParticipantCard extends StatefulWidget {
   _ParticipantCardState createState() => _ParticipantCardState();
 }
 
-class _ParticipantCardState extends State<ParticipantCard> {
+class _ParticipantCardState extends State<ParticipantCard>
+    with SingleTickerProviderStateMixin {
   bool _isHovering = false;
   final _prefsService = UserPreferencesService();
+  late RealtimeFirebaseService _firebaseService;
 
+  // Variabili per l'animazione
+  late AnimationController _animationController; // <--- AGGIUNTO
+  late Animation<double> _animation; // <--- AGGIUNTO
+  num? _lastTrillValue; // Per tenere traccia del valore precedente del trillo
+
+  @override
+  void initState() {
+    super.initState();
+    _firebaseService =
+        Provider.of<RealtimeFirebaseService>(context, listen: false);
+
+    // Inizializza il controller dell'animazione
+    _animationController = AnimationController(
+      // <--- AGGIUNTO
+      duration: const Duration(milliseconds: 500), // Durata dell'animazione
+      vsync: this,
+    );
+
+    // Definisci l'animazione (un effetto "shake")
+    _animation = TweenSequence<double>([
+      // <--- AGGIUNTO
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 0.02), weight: 1),
+      // ruota a dx
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 0.02, end: -0.02), weight: 1),
+      // ruota a sx
+      TweenSequenceItem(
+          tween: Tween<double>(begin: -0.02, end: 0.02), weight: 1),
+      // ruota a dx
+      TweenSequenceItem(
+          tween: Tween<double>(begin: 0.02, end: -0.02), weight: 1),
+      // ruota a sx
+      TweenSequenceItem(
+          tween: Tween<double>(begin: -0.02, end: 0.0), weight: 1),
+      // torna al centro
+    ]).animate(
+        CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));
+    // Oppure un'animazione più elastica:
+    // _animation = Tween<double>(begin: 0, end: 1).animate(
+    //   CurvedAnimation(parent: _animationController, curve: Curves.elasticInOut)
+    // )..addListener(() { setState(() {}); }); // Se non usi AnimatedBuilder e vuoi ricostruire con setState
+
+    // Salva il valore iniziale del trillo
+    _lastTrillValue = widget.participant.trill;
+  }
+
+  @override
+  void didUpdateWidget(ParticipantCard oldWidget) {
+    // <--- AGGIUNTO
+    super.didUpdateWidget(oldWidget);
+    // Controlla se il valore del trillo è cambiato e non è nullo
+    // Questo assume che `widget.participant.trill` sia un timestamp o un contatore
+    // che viene aggiornato in Firebase quando un trillo viene inviato A QUESTO partecipante.
+    if (widget.participant.trill != _lastTrillValue) {
+      //print("Trill detected for ${widget.participant.name}! Old: $_lastTrillValue, New: ${widget.participant.trill}");
+      if (mounted) {
+        // Assicurati che il widget sia ancora montato
+        if (widget.participant.trill != 0)
+          _animationController.forward(
+              from: 0.0); // Avvia l'animazione dalla sua posizione iniziale
+      }
+      _lastTrillValue =
+          widget.participant.trill; // Aggiorna l'ultimo valore del trillo
+    }
+  }
+
+  @override
+  void dispose() {
+    _animationController
+        .dispose(); // <--- AGGIUNTO: Non dimenticare di fare dispose!
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -233,55 +310,76 @@ class _ParticipantCardState extends State<ParticipantCard> {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              Container(
-                width: 80,
-                height: 120,
-                decoration: cardDecoration,
-                child: cardContent,
+              AnimatedBuilder(
+                builder: (context, child) {
+                  return Transform.rotate(
+                    angle: _animation.value * math.pi,
+                    // Converte radianti per shake (o usa direttamente radianti nel Tween)
+                    // Se usi un Tween da 0 a 1 per Curves.elasticInOut:
+                    // angle: math.sin(_animation.value * math.pi * 2) * 0.05, // Esempio per effetto elastico
+                    child: child,
+                  );
+                },
+                animation: _animation,
+                child: Container(
+                  width: 80,
+                  height: 120,
+                  decoration: cardDecoration,
+                  child: cardContent,
+                ),
               ),
-              if (true || canBeKicked && _isHovering )
+              if (canBeKicked && _isHovering && !hasVoted)
                 Positioned(
-                  top: -10,
-                  right: -10,
-                  child: Row(
-                    children: [
-                      Tooltip(
-                        message: 'Trill!',
-                        child: IconButton(
-                            onPressed: () async {
-                              sendNudgeSignalViaFirestore(
-                                  senderId: (await _prefsService.getId()) ?? '',
-                              senderName: (await _prefsService.getUsername() ?? ''),
-                              recipientId: widget.participant.id,
-                              recipientName: widget.participant.name,
-                              context: context);
-                            },
-                            icon: const Icon(
-                              Icons.notifications_none_outlined,
-                              color: Colors.amber,
-                            )),
-                      ),
-                      Material(
-                        color: Colors.redAccent,
+                    top: -10,
+                    left: -10,
+                    child: Tooltip(
+                      message: 'Trill!',
+                      child: Material(
+                        color: Colors.white,
                         shape: const CircleBorder(),
                         elevation: 4.0,
                         child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: () {
-                            widget.onKick(
-                                widget.participant.id, widget.participant.name);
-                          },
-                          child: const Padding(
-                            padding: EdgeInsets.all(4.0),
-                            child: Icon(
-                              Icons.close,
-                              color: Colors.white,
-                              size: 18.0,
-                            ),
-                          ),
+                            onTap: () async {
+                              sendNudgeSignalViaFirestore(
+                                  senderId: (await _prefsService.getId()) ?? '',
+                                  senderName:
+                                      (await _prefsService.getUsername() ?? ''),
+                                  recipientId: widget.participant.id,
+                                  recipientName: widget.participant.name,
+                                  context: context);
+                            },
+                            child: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(
+                                color: accentOrange,
+                                Icons.notifications_none_outlined,
+                              ),
+                            )),
+                      ),
+                    )),
+              if (canBeKicked && _isHovering)
+                Positioned(
+                  top: -10,
+                  right: -10,
+                  child: Material(
+                    color: Colors.redAccent,
+                    shape: const CircleBorder(),
+                    elevation: 4.0,
+                    child: InkWell(
+                      customBorder: const CircleBorder(),
+                      onTap: () {
+                        widget.onKick(
+                            widget.participant.id, widget.participant.name);
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.all(4.0),
+                        child: Icon(
+                          Icons.close,
+                          color: Colors.white,
+                          size: 18.0,
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
             ],
@@ -299,12 +397,17 @@ class _ParticipantCardState extends State<ParticipantCard> {
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
                   style: TextStyle(
-                    fontWeight: widget.isMe ? FontWeight.bold : FontWeight.normal,
+                    fontWeight:
+                        widget.isMe ? FontWeight.bold : FontWeight.normal,
                     fontSize: 14,
                     color: Colors.black87,
                   ),
                 ),
-                if (widget.notifications != null && widget.notifications! > 0) Icon(Icons.notifications_active_outlined)
+                if ((widget.participant.trill ?? 0) > 0)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Icon(Icons.notifications_active_outlined),
+                  )
               ],
             ),
           ),
@@ -324,10 +427,9 @@ class _ParticipantCardState extends State<ParticipantCard> {
     required String senderName, // Il tuo nome
     required BuildContext context, // Per ScaffoldMessenger
   }) async {
-
-    // if (recipientId == senderId) {
-    //   return;
-    // }
+    if (recipientId == senderId) {
+      return;
+    }
 
     try {
       final nudgePayload = {
@@ -336,21 +438,20 @@ class _ParticipantCardState extends State<ParticipantCard> {
         'senderName': senderName,
         'title': 'Trill! 🔔',
         'body': '$senderName sent you a trill!',
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': DateTime.now().toUtc(),
         'read': false,
         'type': 'web_nudge',
       };
-      await FirebaseFirestore.instance
-          .collection('webNudges')
-          .add(nudgePayload);
-
+      await _firebaseService.sendNudgeSignal(widget.roomId, nudgePayload);
+      // await FirebaseFirestore.instance
+      //     .collection('webNudges')
+      //     .add(nudgePayload);
     } catch (e) {
       if (context != null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error sending trill: ${e.toString()}')),
         );
       }
-      print('Error sending web nudge signal: $e');
     }
   }
 }
