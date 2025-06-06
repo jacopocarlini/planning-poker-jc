@@ -14,7 +14,7 @@ import 'models/room.dart'; // Assumendo che Room.fromVotesList esista
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
 
-const String currentAppVersion = "2.0.3";
+const String currentAppVersion = "2.1.0";
 
 // --- Entry Point ---
 void main() async {
@@ -120,7 +120,6 @@ class _AppWrapperState extends State<AppWrapper> {
               actions: [
                 TextButton(
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
-
                   child: const Text('Cancel'),
                   onPressed: () {
                     Navigator.of(context).pop();
@@ -138,8 +137,7 @@ class _AppWrapperState extends State<AppWrapper> {
           },
         );
         print('App is up-to-date or version check failed severely.');
-      }
-      else {
+      } else {
         print('App is up-to-date or version check failed mildly.');
       }
     } catch (e, s) {
@@ -159,10 +157,12 @@ class _AppWrapperState extends State<AppWrapper> {
     if (major > currentMajor) {
       return true;
     }
-    if(major == currentMajor && minor > currentMinor) {
+    if (major == currentMajor && minor > currentMinor) {
       return true;
     }
-    if (major == currentMajor && minor == currentMinor && patch > currentPatch) {
+    if (major == currentMajor &&
+        minor == currentMinor &&
+        patch > currentPatch) {
       return false;
     }
     return null;

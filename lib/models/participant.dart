@@ -8,6 +8,7 @@ class Participant {
   final String id;
   final String name;
   final String? vote;
+  final int? trill;
   final bool isCreator;
   final bool isSpectator;
 
@@ -15,6 +16,7 @@ class Participant {
     required this.id,
     required this.name,
     this.vote,
+    this.trill,
     this.isCreator = false,
     this.isSpectator = false,
   });
@@ -23,6 +25,7 @@ class Participant {
     String? id,
     String? name,
     String? vote,
+    int? trill,
     bool? isCreator,
     bool? isSpectator,
     bool? clearVote,
@@ -30,6 +33,7 @@ class Participant {
     return Participant(
       id: id ?? this.id,
       name: name ?? this.name,
+      trill: trill ?? this.trill,
       vote: clearVote == true ? null : vote ?? this.vote,
       isCreator: isCreator ?? this.isCreator,
       isSpectator: isSpectator ?? this.isSpectator,
@@ -40,6 +44,7 @@ class Participant {
     'id': id,
     'name': name,
     'vote': vote,
+    'trill': trill,
     'isCreator': isCreator,
     'isSpectator': isSpectator,
   };
@@ -48,6 +53,7 @@ class Participant {
     id: json['id'] as String? ?? "default_id_${Random().nextInt(1000)}", // Fallback ID se mancante
     name: json['name'] as String? ?? 'Unknown', // Fallback nome se mancante
     vote: json['vote'] as String?,
+    trill: json['trill'] as int?,
     isCreator: json['isCreator'] as bool? ?? false,
     isSpectator: json['isSpectator'] as bool? ?? false,
   );

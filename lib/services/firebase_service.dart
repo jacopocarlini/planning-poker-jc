@@ -149,9 +149,13 @@ class RealtimeFirebaseService {
     final voteRef =
         _getRoomRef(roomId).child('participants/$participantId/vote');
 
+    final trillRef =
+        _getRoomRef(roomId).child('participants/$participantId/trill');
+
     try {
       // Scrive il voto (o null per cancellare). Nessun controllo su chi lo fa.
       await voteRef.set(vote);
+      await trillRef.set(0);
     } catch (e) {
       throw Exception("Database error submitting vote: $e");
     }
@@ -603,6 +607,19 @@ class RealtimeFirebaseService {
       await isPersistentRef.set(isPersistent ?? false);
     } catch (e) {
       throw Exception("Database error set isPersistent: $e");
+    }
+  }
+
+  sendNudgeSignal(String roomId, Map<String, Object> nudgePayload) async {
+    final trillRef =
+    _getRoomRef(roomId).child('participants/${nudgePayload["recipientId"]}/trill');
+
+    try {
+      var trill = await trillRef.get();
+      var value = trill.value != null ? trill.value as int : 0;
+      await trillRef.set(value + 1);
+    } catch (e) {
+      throw Exception("Database error submitting vote: $e");
     }
   }
 }

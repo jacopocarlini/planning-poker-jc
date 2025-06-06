@@ -45,8 +45,6 @@ class VoteHistoryEntry {
         (entry.key.startsWith('v-') ? entry.key.substring(2) : entry.key):
             entry.value
     };
-    print(
-        'New voteCounts (conciso, senza prefisso "v-"): $newVoteCountsConcise');
     return newVoteCountsConcise;
   }
 

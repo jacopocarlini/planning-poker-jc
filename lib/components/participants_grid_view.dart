@@ -6,6 +6,7 @@ import 'package:poker_planning/models/participant.dart';
 class ParticipantsGridView extends StatelessWidget {
   final List<Participant> participants;
   final bool cardsRevealed;
+  final String roomId;
   final String myParticipantId;
   final Future<void> Function(String participantId, String participantName) onKickParticipant;
   final VoidCallback onRevealCards;
@@ -17,6 +18,7 @@ class ParticipantsGridView extends StatelessWidget {
   const ParticipantsGridView({
     Key? key,
     required this.participants,
+    required this.roomId,
     required this.cardsRevealed,
     required this.myParticipantId,
     required this.onKickParticipant,
@@ -58,6 +60,7 @@ class ParticipantsGridView extends StatelessWidget {
             children: participants.map((participant) {
               return ParticipantCard(
                 key: ValueKey(participant.id),
+                roomId: roomId,
                 participant: participant,
                 cardsRevealed: cardsRevealed,
                 isMe: participant.id == myParticipantId,

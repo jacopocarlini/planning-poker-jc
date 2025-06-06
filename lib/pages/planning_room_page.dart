@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/HistorySidePanel.dart';
@@ -51,6 +52,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _presenceSetupDone = false;
   List<VoteHistoryEntry> _votingHistory = [];
   bool _isPersistent = false;
+  int _lastTrillValue = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -65,6 +68,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     _subscribeToRoomUpdates();
     _setupPresenceIfNeeded();
     _updatePageUrlIfNeeded();
+    // startNudgeListener(widget.currentParticipantId);
   }
 
   void _subscribeToRoomUpdates() {
@@ -114,6 +118,15 @@ class _PlanningRoomState extends State<PlanningRoom> {
         _votingHistory = room.historyVote;
         _isLoading = false;
       });
+
+      var trillValue = (_me?.trill ?? 0);
+      if (trillValue != _lastTrillValue && trillValue > 0) {
+        showBrowserNotification(
+            title: 'Trill! 🔔', body: 'Someone sent you a trill!');
+      }
+      setState(() {
+        _lastTrillValue = trillValue;
+      });
     }, onError: (error) {
       if (!mounted) return;
       print("Error in room stream for ${widget.roomId}: $error");
@@ -151,6 +164,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   @override
   Future<void> dispose() async {
     super.dispose();
+    _audioPlayer.dispose();
     _roomSubscription?.cancel();
     _roomSubscription = null;
     // _nameController.dispose(); // Non più usato
@@ -346,6 +360,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                           child: SingleChildScrollView(
                             child: ParticipantsGridView(
                               participants: participants,
+                              roomId: room.id,
                               cardsRevealed: cardsRevealed,
                               myParticipantId: _myParticipantId,
                               onKickParticipant: _showKickConfirmationDialog,
@@ -489,8 +504,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
   Future<void> _kickParticipant(
       String participantIdToKick, String participantName) async {
     final messenger = ScaffoldMessenger.of(context);
-    print(
-        'Kicking participant $participantIdToKick from room ${widget.roomId}');
     try {
       await _firebaseService.removeParticipant(
           widget.roomId, participantIdToKick);
@@ -498,10 +511,57 @@ class _PlanningRoomState extends State<PlanningRoom> {
           content: Text('"$participantName" has been removed.'),
           backgroundColor: Colors.green));
     } catch (e) {
-      print("Error kicking participant $participantIdToKick: $e");
       messenger.showSnackBar(SnackBar(
           content: Text('Failed to remove "$participantName": $e'),
           backgroundColor: Colors.red));
+    }
+  }
+
+// Funzione helper per mostrare notifiche browser
+  void showBrowserNotification({
+    required String title,
+    required String body,
+  }) {
+    if (html.Notification.supported) {
+      // print("Browser notifications are supported."); // DEBUG
+      html.Notification.requestPermission().then((permission) {
+        if (permission == 'granted') {
+          try {
+            _audioPlayer.play(AssetSource('audio/beep.mp3'));
+            final notification = html.Notification(
+              title,
+              body: body,
+              tag: 'web-nudge-${DateTime.now().millisecondsSinceEpoch}',
+              // Tag univoco per evitare sovrapposizioni se invii rapidamente
+              icon: '/icons/icon-192.png', // Opzionale: aggiungi un'icona
+            );
+
+            notification.onClick.listen((event) {
+              // print('Browser notification clicked. Data: $data');
+              // html.window.focus(); // Porta la finestra/scheda in primo piano
+              // Qui potresti navigare o fare altro in base a `data`
+              // Esempio: se data contiene un 'roomId', potresti voler navigare a quella stanza
+            });
+            notification.onShow.listen((event) {
+              // print("Notification successfully SHOWN to the user."); // DEBUG
+            });
+            notification.onError.listen((event) {
+              // Aggiunto gestore errori
+              // print("ERROR showing notification: ${notification.title}, Error: $event");
+            });
+            notification.onClose.listen((event) {
+              // print("Notification closed: ${notification.title}");
+            });
+          } catch (e) {
+            print("Exception while creating html.Notification: $e"); // DEBUG
+          }
+        } else {
+          print(
+              'Permesso notifiche browser NON concesso (status: $permission).');
+        }
+      });
+    } else {
+      print('API Notification del browser non supportata.');
     }
   }
 }
