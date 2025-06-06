@@ -60,7 +60,7 @@ class VoteResultsSummaryView extends StatelessWidget {
               barTouchData: BarTouchData(
                 enabled: true, // Abilita l'interazione al tocco
                 touchTooltipData: BarTouchTooltipData(
-                  tooltipRoundedRadius: 8,
+                  tooltipBorderRadius: BorderRadius.circular(8),
                   getTooltipItem: (group, groupIndex, rod, rodIndex) {
                     final voteValue = sortedVotes[groupIndex].key;
                     final count = sortedVotes[groupIndex].value;
