@@ -14,7 +14,7 @@ import 'models/room.dart'; // Assumendo che Room.fromVotesList esista
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
 
-const String currentAppVersion = "2.1.0";
+const String currentAppVersion = "2.1.1";
 
 // --- Entry Point ---
 void main() async {
@@ -251,7 +251,9 @@ class _AppWrapperState extends State<AppWrapper> {
                       constraints: const BoxConstraints(maxWidth: 1200),
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.all(16.0),
-                        child: VoteResultsSummaryView(room: roomForResults),
+                        child: SizedBox(
+                                height: MediaQuery.sizeOf(context).height / 2,
+                            child: VoteResultsSummaryView(room: roomForResults)),
                       ),
                     ),
                   )),
