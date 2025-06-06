@@ -73,6 +73,12 @@ Follow these steps to set up and run the project on your local machine:
 
 ---
 
+## How to Build and Deploy
+```
+flutter build web
+firebase deploy
+```
+
 ## Notes
 
 Demo Purpose: This project is intended solely as a technical demonstration.

@@ -71,9 +71,8 @@ final ThemeData appThemeData = ThemeData(
   primaryColor: primaryBlue, // Still useful for some older widgets
 
   // Font
-  fontFamily: 'Poppins', // Poppins or Inter look closer than Roboto in the screenshot
-  // Make sure to add the font to pubspec.yaml and assets!
-  // If you prefer Roboto, change it back here.
+  fontFamily: 'Roboto',
+  fontFamilyFallback: ["NotoColorEmoji"],
 
   // Scaffold Background
   scaffoldBackgroundColor: lightGreyBackground,
@@ -245,8 +244,8 @@ final ThemeData appThemeData = ThemeData(
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12.0),
     ),
-    titleTextStyle: TextStyle(color: darkText, fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Poppins'),
-    contentTextStyle: TextStyle(color: darkText, fontSize: 14, height: 1.4, fontFamily: 'Poppins'),
+    titleTextStyle: TextStyle(color: darkText, fontSize: 18, fontWeight: FontWeight.w600, fontFamily: 'Roboto'),
+    contentTextStyle: TextStyle(color: darkText, fontSize: 14, height: 1.4, fontFamily: 'Roboto'),
   ),
 
   scrollbarTheme: const ScrollbarThemeData(

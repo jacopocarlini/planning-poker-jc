@@ -44,3 +44,6 @@ flutter:
           weight: 700
         - asset: assets/fonts/Roboto/static/Roboto-Light.ttf
           weight: 300
+    - family: NotoColorEmoji
+      fonts:
+        - asset: assets/fonts/Noto/NotoColorEmoji-Regular.ttf

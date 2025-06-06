@@ -171,7 +171,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Text(
-                        isExpanded ? 'No voting history yet.' : '...',
+                        isExpanded ? 'No voting history yet.' : '',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: Theme.of(context).hintColor),
                       ),
