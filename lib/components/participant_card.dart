@@ -57,19 +57,19 @@ class _ParticipantCardState extends State<ParticipantCard>
     // Definisci l'animazione (un effetto "shake")
     _animation = TweenSequence<double>([
       // <--- AGGIUNTO
-      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 0.02), weight: 1),
+      TweenSequenceItem(tween: Tween<double>(begin: 0.0, end: 0.03), weight: 1),
       // ruota a dx
       TweenSequenceItem(
-          tween: Tween<double>(begin: 0.02, end: -0.02), weight: 1),
+          tween: Tween<double>(begin: 0.03, end: -0.03), weight: 1),
       // ruota a sx
       TweenSequenceItem(
-          tween: Tween<double>(begin: -0.02, end: 0.02), weight: 1),
+          tween: Tween<double>(begin: -0.03, end: 0.03), weight: 1),
       // ruota a dx
       TweenSequenceItem(
-          tween: Tween<double>(begin: 0.02, end: -0.02), weight: 1),
+          tween: Tween<double>(begin: 0.03, end: -0.03), weight: 1),
       // ruota a sx
       TweenSequenceItem(
-          tween: Tween<double>(begin: -0.02, end: 0.0), weight: 1),
+          tween: Tween<double>(begin: -0.03, end: 0.0), weight: 1),
       // torna al centro
     ]).animate(
         CurvedAnimation(parent: _animationController, curve: Curves.easeInOut));

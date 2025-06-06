@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
 
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/HistorySidePanel.dart';
@@ -52,6 +52,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
   bool _presenceSetupDone = false;
   List<VoteHistoryEntry> _votingHistory = [];
   bool _isPersistent = false;
+  int _lastTrillValue = 0;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // final TextEditingController _nameController = TextEditingController(); // Non più usato direttamente qui se _saveProfile è aggiornato
   final _prefsService = UserPreferencesService();
@@ -117,11 +119,14 @@ class _PlanningRoomState extends State<PlanningRoom> {
         _isLoading = false;
       });
 
-      if(_currentRoom!.participants
-          .firstWhere((p) => p.id == _myParticipantId) .trill! > 0) {
-        showBrowserNotification(title: 'Trill! 🔔', body: 'Someone sent you a trill!', data: null);
+      var trillValue = (_me?.trill ?? 0);
+      if (trillValue != _lastTrillValue && trillValue > 0) {
+        showBrowserNotification(
+            title: 'Trill! 🔔', body: 'Someone sent you a trill!');
       }
-
+      setState(() {
+        _lastTrillValue = trillValue;
+      });
     }, onError: (error) {
       if (!mounted) return;
       print("Error in room stream for ${widget.roomId}: $error");
@@ -159,6 +164,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
   @override
   Future<void> dispose() async {
     super.dispose();
+    _audioPlayer.dispose();
     _roomSubscription?.cancel();
     _roomSubscription = null;
     // _nameController.dispose(); // Non più usato
@@ -511,70 +517,23 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
-  StreamSubscription? _webNudgeListenerSubscription;
-  String? _currentUserId; // ID dell'utente loggato
-
-  void startNudgeListener(String currentUserId) {
-    _currentUserId = currentUserId;
-    if (_currentUserId == null || _currentUserId!.isEmpty) {
-      return;
-    }
-    _webNudgeListenerSubscription?.cancel();
-
-    _webNudgeListenerSubscription = FirebaseFirestore.instance
-        .collection('webNudges')
-        .where('recipientId', isEqualTo: _currentUserId)
-        .where('read', isEqualTo: false)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .listen((QuerySnapshot snapshot) async {
-      if (snapshot.docs.isNotEmpty) {
-        setState(() {
-        });
-      }
-
-      for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        final nudgeId = doc.id;
-
-        final title = data['title'] as String? ?? 'Trill!';
-        final body = data['body'] as String? ?? 'Someone sent you a trill.';
-
-        await FirebaseFirestore.instance
-            .collection('webNudges')
-            .doc(nudgeId)
-            .delete();
-        // .update({'read': true}); // Marca la notifica come letta();
-
-        // Mostra la notifica usando l'API del Browser
-        showBrowserNotification(title: title, body: body, data: data);
-      }
-    }, onError: (error) {
-      print("Error in web nudge listener: $error");
-    });
-  }
-
-  void stopWebNudgeListener() {
-    _webNudgeListenerSubscription?.cancel();
-  }
-
 // Funzione helper per mostrare notifiche browser
-  void showBrowserNotification(
-      {required String title,
-      required String body,
-      Map<String, dynamic>? data}) {
+  void showBrowserNotification({
+    required String title,
+    required String body,
+  }) {
     if (html.Notification.supported) {
       // print("Browser notifications are supported."); // DEBUG
       html.Notification.requestPermission().then((permission) {
         if (permission == 'granted') {
           try {
+            _audioPlayer.play(AssetSource('audio/beep.mp3'));
             final notification = html.Notification(
               title,
               body: body,
               tag: 'web-nudge-${DateTime.now().millisecondsSinceEpoch}',
               // Tag univoco per evitare sovrapposizioni se invii rapidamente
               icon: '/icons/icon-192.png', // Opzionale: aggiungi un'icona
-              // renotify: true, // Opzionale: se vuoi che una notifica con lo stesso tag faccia rumore/vibrazione di nuovo
             );
 
             notification.onClick.listen((event) {

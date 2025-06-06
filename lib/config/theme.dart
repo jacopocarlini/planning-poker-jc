@@ -120,7 +120,7 @@ final ThemeData appThemeData = ThemeData(
   ),
 
   // Card Theme
-  cardTheme: CardTheme(
+  cardTheme: CardThemeData(
     color: cardWhite,
     elevation: 0.5, // Very subtle shadow or 0
     // shadowColor: Colors.grey.withOpacity(0.1), // Subtle shadow color
@@ -202,7 +202,7 @@ final ThemeData appThemeData = ThemeData(
   ),
 
   // TabBar Theme (For 'My events', 'Invites', 'Archive')
-  tabBarTheme: TabBarTheme(
+  tabBarTheme: TabBarThemeData(
     indicator: UnderlineTabIndicator(
       borderSide: BorderSide(color: accentYellow, width: 3.0), // Yellow underline
       insets: EdgeInsets.symmetric(horizontal: 16.0), // Adjust underline length
@@ -240,7 +240,7 @@ final ThemeData appThemeData = ThemeData(
   ),
 
   // Dialog Theme
-  dialogTheme: DialogTheme(
+  dialogTheme: DialogThemeData(
     backgroundColor: cardWhite,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(12.0),
