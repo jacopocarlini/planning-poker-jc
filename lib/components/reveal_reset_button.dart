@@ -31,7 +31,7 @@ class RevealResetButton extends StatelessWidget {
       onPressed: cardsRevealed
           ? (canReset ? onReset : null)
           : (canReveal ? onReveal : null),
-      icon: Icon(cardsRevealed ? Icons.refresh : Icons.remove_red_eye_outlined),
+      icon: Icon(cardsRevealed ? Icons.refresh : Icons.visibility),
       label: Text(cardsRevealed ? 'Reset Voting' : 'Reveal Cards'),
     );
   }
