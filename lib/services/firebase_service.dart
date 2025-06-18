@@ -451,17 +451,55 @@ class RealtimeFirebaseService {
     var roomRef = _getRoomRef(roomId);
     var historyRef = roomRef.child('historyVote');
     final historySnapshot = await historyRef.get();
-    int id = 0;
+
+    // Mappa che conterrà tutti gli aggiornamenti da eseguire in un'unica operazione
+    Map<String, dynamic> updates = {};
+
+    int newId = 0;
+
     if (historySnapshot.exists && historySnapshot.value != null) {
       Map historyData = historySnapshot.value as Map;
-      id = historyData.values
-              .map((elem) => elem['id'] as int)
-              .reduce((int a, int b) => max(a, b)) +
-          1;
+
+      // --- LOGICA DI DESELEZIONE ---
+      // 1. Trova la chiave dell'elemento attualmente selezionato (se esiste)
+      String? oldSelectedKey;
+      for (var entry in historyData.entries) {
+        if (entry.value is Map && entry.value['selected'] == true) {
+          oldSelectedKey = entry.key;
+          break; // Trovato, possiamo uscire dal ciclo
+        }
+      }
+
+      // 2. Se è stato trovato un elemento selezionato, prepara l'aggiornamento per deselezionarlo
+      if (oldSelectedKey != null) {
+        // Il percorso deve essere relativo al `roomRef` su cui chiameremo `update`
+        updates['historyVote/$oldSelectedKey/selected'] = false;
+      }
+      // --- FINE LOGICA DI DESELEZIONE ---
+
+      // Calcola il nuovo ID basandosi sul massimo ID esistente
+      if (historyData.isNotEmpty) {
+        newId = historyData.values
+            .map((elem) => elem['id'] as int)
+            .reduce(max) + 1;
+      }
     }
-    await roomRef.child('historyVote').child('v-' + id.toString()).set(
-        VoteHistoryEntry(id: id, voteCounts: {}, storyTitle: 'Unnamed Task')
-            .toJson());
+
+    // 3. Crea il nuovo elemento di history, che sarà quello selezionato
+    var newVoteHistoryEntry = VoteHistoryEntry(
+        id: newId,
+        voteCounts: {},
+        storyTitle: 'Unnamed Task',
+        selected: true);
+
+    // 4. Prepara l'aggiornamento per aggiungere il nuovo elemento
+    updates['historyVote/v-$newId'] = newVoteHistoryEntry.toJson();
+
+    // 5. Prepara l'aggiornamento per il titolo della storia corrente
+    updates['currentStoryTitle'] = newVoteHistoryEntry.storyTitle;
+
+    // 6. Esegui tutti gli aggiornamenti in un'unica operazione atomica
+    await roomRef.update(updates);
   }
 
   Future<void> deleteHistory(String roomId, VoteHistoryEntry entry) async {
@@ -498,8 +536,8 @@ class RealtimeFirebaseService {
         roomRef.update({
           'areCardsRevealed': false,
         });
-        resetVoting(roomId: roomId, selected: true);
       }
+        // resetVoting(roomId: roomId, selected: true);
     }
   }
 
