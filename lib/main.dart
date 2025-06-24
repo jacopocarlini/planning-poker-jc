@@ -14,7 +14,7 @@ import 'models/room.dart'; // Assumendo che Room.fromVotesList esista
 import 'pages/welcome_page.dart';
 import 'services/firebase_service.dart';
 
-const String currentAppVersion = "2.1.2";
+const String currentAppVersion = "2.2.0";
 
 // --- Entry Point ---
 void main() async {

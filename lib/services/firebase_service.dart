@@ -33,6 +33,7 @@ class RealtimeFirebaseService {
   // Create a new room
   Future<Room> createRoom(
       {required String creatorName,
+      required String roomName,
       required bool isSpectator,
       required List<String> cardValues,
       required bool isPersistent}) async {
@@ -53,6 +54,7 @@ class RealtimeFirebaseService {
 
     final newRoom = Room(
         id: roomId,
+        name: roomName,
         creatorId: creatorId,
         isPersistent: isPersistent,
         participants: [creator],

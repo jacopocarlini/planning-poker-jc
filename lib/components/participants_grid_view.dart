@@ -3,10 +3,13 @@ import 'package:poker_planning/components/participant_card.dart'; // Assicurati 
 import 'package:poker_planning/components/reveal_reset_button.dart';
 import 'package:poker_planning/models/participant.dart';
 
+import '../models/room.dart';
+
 class ParticipantsGridView extends StatelessWidget {
   final List<Participant> participants;
   final bool cardsRevealed;
   final String roomId;
+  final Room room;
   final String myParticipantId;
   final Future<void> Function(String participantId, String participantName) onKickParticipant;
   final VoidCallback onRevealCards;
@@ -19,6 +22,7 @@ class ParticipantsGridView extends StatelessWidget {
     Key? key,
     required this.participants,
     required this.roomId,
+    required this.room,
     required this.cardsRevealed,
     required this.myParticipantId,
     required this.onKickParticipant,
@@ -47,7 +51,7 @@ class ParticipantsGridView extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 16.0),
           child: Text(
-            '👥 Team Members: ${participants.length}',
+            '🚪 ${room.name == '' ? 'Planning Room' : room.name}',
             style: Theme.of(context).textTheme.headlineLarge,
           ),
         ),

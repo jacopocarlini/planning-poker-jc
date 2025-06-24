@@ -4,6 +4,7 @@ import 'package:poker_planning/models/vote_history_entry.dart';
 
 class Room {
   final String id;
+  final String name;
   final String creatorId;
   final List<Participant> participants;
   final bool areCardsRevealed;
@@ -14,6 +15,7 @@ class Room {
 
   Room({
     required this.id,
+    this.name = '',
     required this.creatorId,
     required this.participants,
     this.isPersistent = false,
@@ -36,6 +38,7 @@ class Room {
 
   Room copyWith({
     String? id,
+    String? name,
     String? creatorId,
     List<Participant>? participants,
     bool? areCardsRevealed,
@@ -44,6 +47,7 @@ class Room {
   }) {
     return Room(
       id: id ?? this.id,
+      name: name ?? this.name,
       creatorId: creatorId ?? this.creatorId,
       participants: participants ?? this.participants,
       areCardsRevealed: areCardsRevealed ?? this.areCardsRevealed,
@@ -137,6 +141,7 @@ class Room {
 
     return Room(
         id: roomId,
+        name: data['name'] as String? ?? '',
         creatorId: data['creatorId'] as String? ?? '',
         participants: participantsList,
         areCardsRevealed: data['areCardsRevealed'] as bool? ?? false,
@@ -149,6 +154,7 @@ class Room {
   Map<String, dynamic> toJsonForDb() => {
         // 'id': id, // L'ID è la CHIAVE nel DB
         'creatorId': creatorId,
+        'name': name,
         'participants': Map.fromEntries(
             participants.map((p) => MapEntry(p.id, p.toJson()))),
         'areCardsRevealed': areCardsRevealed,

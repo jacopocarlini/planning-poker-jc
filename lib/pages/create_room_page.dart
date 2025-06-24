@@ -71,6 +71,14 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 ),
                 const SizedBox(height: 40),
 
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Room Name',
+                    // border: OutlineInputBorder(), // Usa il default del tema
+                  ),
+                ),
+
                 const SizedBox(height: 24),
                 DropdownButtonFormField<String>(
                   value: _selectedCardSetName,
@@ -178,6 +186,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         // Passa il set di carte selezionato al service
         final room = await firebaseService.createRoom(
           creatorName: username,
+          roomName: _nameController.text,
           isSpectator: _isSpectator,
           isPersistent: _isPersistent,
           cardValues: selectedCards, // Passa il set di carte

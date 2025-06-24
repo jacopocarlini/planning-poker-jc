@@ -3,6 +3,7 @@ import 'dart:html' as html; // Needed for window.history, window.location
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:poker_planning/components/HistorySidePanel.dart';
 import 'package:poker_planning/components/participants_grid_view.dart';
@@ -289,6 +290,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
     final participants =
         room.participants.where((p) => !p.isSpectator).toList();
     final spectators = room.participants.where((p) => p.isSpectator).toList();
+    final players = room.participants.where((p) => !p.isSpectator).toList();
     final cardValues = room.cardValues;
     final cardsRevealed = room.areCardsRevealed;
 
@@ -338,9 +340,28 @@ class _PlanningRoomState extends State<PlanningRoom> {
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Text(
+                                '👥 Team Members: ${participants.length}',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold, fontSize: 18)),
+                          ),
+                          ...players.map((elem) => Text(elem.name)),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: SizedBox(
+                                width: 200,
+                                child: const Divider(
+                                    height: 1,
+                                    color:
+                                        CupertinoColors.lightBackgroundGray)),
+                          ),
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(top: 8, bottom: 12.0),
                             child: Text("👀 Spectators: ${spectators.length}",
                                 style: const TextStyle(
                                     fontWeight: FontWeight.bold, fontSize: 18)),
@@ -361,6 +382,7 @@ class _PlanningRoomState extends State<PlanningRoom> {
                             child: ParticipantsGridView(
                               participants: participants,
                               roomId: room.id,
+                              room: room,
                               cardsRevealed: cardsRevealed,
                               myParticipantId: _myParticipantId,
                               onKickParticipant: _showKickConfirmationDialog,
