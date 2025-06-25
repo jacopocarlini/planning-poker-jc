@@ -378,7 +378,7 @@ class _WelcomePageState extends State<WelcomePage> {
               elevation: 2,
               margin: const EdgeInsets.symmetric(vertical: 6.0),
               child: ListTile(
-                title: Text('Room ${index + 1}'),
+                title: Text(room.name != '' ?  room.name : 'Room ${index + 1}'),
                 subtitle: Text('${room.id}'),
                 trailing: IconButton(
                   icon: Icon(Icons.delete_outline,
