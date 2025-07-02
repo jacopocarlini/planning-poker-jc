@@ -7,8 +7,8 @@ import 'package:provider/provider.dart';
 // --- Definisci i set di carte disponibili ---
 const Map<String, List<String>> availableCardSets = {
   'Default': ['0', '1', '2', '3', '5', '8', '13', '?', '☕'],
-  'Fibonacci': ['0', '1', '2', '3', '5', '8', '13', '20', '40', '100', '?', '☕'],
-  'Modified Fibonacci': ['0', '0.5', '1', '2', '3', '5', '8', '13', '20', '?', '☕'],
+  'Fibonacci': ['0', '1', '2', '3', '5', '8', '13', '21', '34', '?', '☕'],
+  'Modified Fibonacci': ['0', '0.5', '1', '2', '3', '5', '8', '13', '20', '40', '?', '☕'],
   'T-Shirt Sizes': ['XS', 'S', 'M', 'L', 'XL', 'XXL', '?', '☕'],
   '1 to 5': ['1', '2', '3', '4', '5'],
   '1 to 10': ['1', '2', '3', '4', '5' , '6', '7', '8', '9', '10' ],
