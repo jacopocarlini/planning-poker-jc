@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
-import 'dart:math' as Math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
@@ -268,6 +267,17 @@ class _PlanningRoomState extends State<PlanningRoom> {
         _currentRoom!.historyVote.length - 1;
   }
 
+  String _nextVote() {
+    if (_currentRoom == null) return '';
+    if (_currentRoom!.historyVote.isEmpty) {
+      return '';
+    }
+    return (_currentRoom!.historyVote
+                .indexWhere((elem) => elem.selected == true) +
+            2)
+        .toString();
+  }
+
   @override
   Widget build(BuildContext context) {
     final Room? room = _currentRoom;
@@ -417,7 +427,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
                                 canReveal: canReveal,
                                 canReset: canReset,
                                 onNextVote: _onNextVote,
-                                hasNextVote: _hasNextVote()
+                                hasNextVote: _hasNextVote(),
+                                nextTask: _nextVote()
                                 // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
                                 ),
                           ),
@@ -460,7 +471,6 @@ class _PlanningRoomState extends State<PlanningRoom> {
               var task = await _firebaseService.addHistory(room.id);
 
               // _showVoteDialog(context, task);
-
             },
             onDeleteEntry: (VoteHistoryEntry entry) {
               _firebaseService.deleteHistory(room.id, entry);
@@ -480,13 +490,15 @@ class _PlanningRoomState extends State<PlanningRoom> {
       ),
     );
   }
+
   void _showVoteDialog(BuildContext context, VoteHistoryEntry entry) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           content: SizedBox(
-            child: Text('Do you want to select this task for voting?'),),
+            child: Text('Do you want to select this task for voting?'),
+          ),
           actions: [
             TextButton(
               child: const Text('Cancel'),
@@ -503,8 +515,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
                 Navigator.of(dialogContext).pop();
               },
               style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   textStyle: const TextStyle(fontSize: 14)),
             ),
           ],

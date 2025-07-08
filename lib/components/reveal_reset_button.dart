@@ -9,6 +9,7 @@ class RevealResetButton extends StatelessWidget {
   final VoidCallback onReset;
   final VoidCallback onNextVote;
   final bool hasNextVote;
+  final String nextTask;
 
   const RevealResetButton({
     super.key,
@@ -19,6 +20,7 @@ class RevealResetButton extends StatelessWidget {
     required this.onReset,
     required this.onNextVote,
     required this.hasNextVote,
+    required this.nextTask,
   });
 
   @override
@@ -56,7 +58,7 @@ class RevealResetButton extends StatelessWidget {
           ),
           onPressed: hasNextVote ? onNextVote : null,
           icon: Icon(Icons.next_plan_outlined),
-          label: Text('Select the next Task'),
+          label: Text('Vote for the ${nextTask}° Task'),
         )
             :
             OutlinedButton.icon(
@@ -67,7 +69,7 @@ class RevealResetButton extends StatelessWidget {
                 ),
                 onPressed: null,
                 icon: Icon(Icons.next_plan_outlined),
-                label: Text('Select the next Task'))
+                label: Text('No other tasks'))
       ],
     );
   }
