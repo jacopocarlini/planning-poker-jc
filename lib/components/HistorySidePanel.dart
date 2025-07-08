@@ -3,9 +3,7 @@ import 'dart:html' as html; // Needed for window.history, window.location
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:poker_planning/components/vote_results_summary_view.dart';
 import 'package:poker_planning/config/theme.dart';
-import 'package:poker_planning/models/room.dart';
 
 import '../models/vote_history_entry.dart';
 import 'FullVotingHistoryListView.dart';
@@ -50,16 +48,29 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
       builder: (BuildContext dialogContext) {
         return AlertDialog(
           content: SizedBox(
-              height: MediaQuery.sizeOf(context).height / 2,
-              width: MediaQuery.sizeOf(context).width / 2,
-              child: VoteResultsSummaryView(
-                  room: Room.fromVotesList(entry.voteCounts.keys.toList()))),
+            child: Text(entry.selected == true
+                ? 'Do you want to deselect this task?'
+                : 'Do you want to vote fot this task?'),
+          ),
           actions: [
             TextButton(
               child: const Text('Cancel'),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
               },
+            ),
+            ElevatedButton.icon(
+              label: Text(entry.selected == true ? 'Unvote' : 'Vote'),
+              onPressed: () {
+                setState(() {
+                  widget.onSelectedEntry(entry);
+                });
+                Navigator.of(dialogContext).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 14)),
             ),
           ],
         );
@@ -239,10 +250,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
             // }
             Future.delayed(const Duration(milliseconds: 50), () {
               if (ModalRoute.of(context)?.isCurrent ?? false) {
-                // _showDetailsDialog(context, entry);
-                setState(() {
-                  widget.onSelectedEntry(entry);
-                });
+                _showDetailsDialog(context, entry);
               }
             });
           },

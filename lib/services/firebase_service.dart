@@ -200,20 +200,20 @@ class RealtimeFirebaseService {
 
       int? idSelected = await getStorySelected(roomId);
       if (idSelected == null) {
-        var historyRef = roomRef.child('historyVote');
-        final historySnapshot = await historyRef.get();
-        int id = 0;
-        if (historySnapshot.exists && historySnapshot.value != null) {
-          Map historyData = historySnapshot.value as Map;
-          id = historyData.values
-                  .map((elem) => elem['id'] as int)
-                  .reduce((int a, int b) => max(a, b)) +
-              1;
-        }
-        await roomRef
-            .child('historyVote')
-            .child('v-' + id.toString())
-            .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
+        // var historyRef = roomRef.child('historyVote');
+        // final historySnapshot = await historyRef.get();
+        // int id = 0;
+        // if (historySnapshot.exists && historySnapshot.value != null) {
+        //   Map historyData = historySnapshot.value as Map;
+        //   id = historyData.values
+        //           .map((elem) => elem['id'] as int)
+        //           .reduce((int a, int b) => max(a, b)) +
+        //       1;
+        // }
+        // await roomRef
+        //     .child('historyVote')
+        //     .child('v-' + id.toString())
+        //     .set(VoteHistoryEntry(id: id, voteCounts: voteCounts).toJson());
       } else {
         await roomRef
             .child('historyVote')
@@ -449,7 +449,7 @@ class RealtimeFirebaseService {
         .set(entry.toJson());
   }
 
-  Future<void> addHistory(String roomId) async {
+  Future<VoteHistoryEntry> addHistory(String roomId) async {
     var roomRef = _getRoomRef(roomId);
     var historyRef = roomRef.child('historyVote');
     final historySnapshot = await historyRef.get();
@@ -458,6 +458,7 @@ class RealtimeFirebaseService {
     Map<String, dynamic> updates = {};
 
     int newId = 0;
+    bool isFirst = true;
 
     if (historySnapshot.exists && historySnapshot.value != null) {
       Map historyData = historySnapshot.value as Map;
@@ -475,15 +476,15 @@ class RealtimeFirebaseService {
       // 2. Se è stato trovato un elemento selezionato, prepara l'aggiornamento per deselezionarlo
       if (oldSelectedKey != null) {
         // Il percorso deve essere relativo al `roomRef` su cui chiameremo `update`
-        updates['historyVote/$oldSelectedKey/selected'] = false;
+        // updates['historyVote/$oldSelectedKey/selected'] = false;
       }
       // --- FINE LOGICA DI DESELEZIONE ---
 
       // Calcola il nuovo ID basandosi sul massimo ID esistente
       if (historyData.isNotEmpty) {
-        newId = historyData.values
-            .map((elem) => elem['id'] as int)
-            .reduce(max) + 1;
+        newId =
+            historyData.values.map((elem) => elem['id'] as int).reduce(max) + 1;
+        isFirst = false;
       }
     }
 
@@ -492,20 +493,24 @@ class RealtimeFirebaseService {
         id: newId,
         voteCounts: {},
         storyTitle: 'Unnamed Task',
-        selected: true);
+        selected: false);
 
     // 4. Prepara l'aggiornamento per aggiungere il nuovo elemento
     updates['historyVote/v-$newId'] = newVoteHistoryEntry.toJson();
 
     // 5. Prepara l'aggiornamento per il titolo della storia corrente
-    updates['currentStoryTitle'] = newVoteHistoryEntry.storyTitle;
+    // if (isFirst) updates['currentStoryTitle'] = newVoteHistoryEntry.storyTitle;
 
     // 6. Esegui tutti gli aggiornamenti in un'unica operazione atomica
     await roomRef.update(updates);
+    return newVoteHistoryEntry;
   }
 
   Future<void> deleteHistory(String roomId, VoteHistoryEntry entry) async {
     var roomRef = _getRoomRef(roomId);
+    if (entry.selected == true) {
+      roomRef.child('currentStoryTitle').set('');
+    }
     await roomRef
         .child('historyVote')
         .child('v-' + entry.id.toString())
@@ -539,7 +544,6 @@ class RealtimeFirebaseService {
           'areCardsRevealed': false,
         });
       }
-        // resetVoting(roomId: roomId, selected: true);
     }
   }
 
@@ -651,8 +655,8 @@ class RealtimeFirebaseService {
   }
 
   sendNudgeSignal(String roomId, Map<String, Object> nudgePayload) async {
-    final trillRef =
-    _getRoomRef(roomId).child('participants/${nudgePayload["recipientId"]}/trill');
+    final trillRef = _getRoomRef(roomId)
+        .child('participants/${nudgePayload["recipientId"]}/trill');
 
     try {
       var trill = await trillRef.get();

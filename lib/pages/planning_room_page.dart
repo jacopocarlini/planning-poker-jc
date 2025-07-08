@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html; // Needed for window.history, window.location
+import 'dart:math' as Math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:collection/collection.dart';
@@ -242,6 +243,31 @@ class _PlanningRoomState extends State<PlanningRoom> {
     }
   }
 
+  Future<void> _onNextVote() async {
+    if (_currentRoom == null) return;
+    if (_currentRoom!.historyVote.isEmpty) {
+      return;
+    }
+    int indexOfNext =
+        _currentRoom!.historyVote.indexWhere((elem) => elem.selected == true) +
+            1;
+    if (indexOfNext > _currentRoom!.historyVote.length - 1) return;
+
+    await _firebaseService.resetVoting(roomId: widget.roomId);
+    await _firebaseService.selectedEntry(
+        widget.roomId, _currentRoom!.historyVote[indexOfNext]);
+  }
+
+  bool _hasNextVote() {
+    if (_currentRoom == null) return false;
+    if (_currentRoom!.historyVote.isEmpty) {
+      return false;
+    }
+    return _currentRoom!.historyVote
+            .indexWhere((elem) => elem.selected == true) <
+        _currentRoom!.historyVote.length - 1;
+  }
+
   @override
   Widget build(BuildContext context) {
     final Room? room = _currentRoom;
@@ -380,18 +406,20 @@ class _PlanningRoomState extends State<PlanningRoom> {
                         Expanded(
                           child: SingleChildScrollView(
                             child: ParticipantsGridView(
-                              participants: participants,
-                              roomId: room.id,
-                              room: room,
-                              cardsRevealed: cardsRevealed,
-                              myParticipantId: _myParticipantId,
-                              onKickParticipant: _showKickConfirmationDialog,
-                              onRevealCards: _revealCards,
-                              onResetVoting: _resetVoting,
-                              canReveal: canReveal,
-                              canReset: canReset,
-                              // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
-                            ),
+                                participants: participants,
+                                roomId: room.id,
+                                room: room,
+                                cardsRevealed: cardsRevealed,
+                                myParticipantId: _myParticipantId,
+                                onKickParticipant: _showKickConfirmationDialog,
+                                onRevealCards: _revealCards,
+                                onResetVoting: _resetVoting,
+                                canReveal: canReveal,
+                                canReset: canReset,
+                                onNextVote: _onNextVote,
+                                hasNextVote: _hasNextVote()
+                                // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
+                                ),
                           ),
                         ),
                         const SizedBox(height: 20),
@@ -428,8 +456,11 @@ class _PlanningRoomState extends State<PlanningRoom> {
                 (VoteHistoryEntry entry, String newTitle) async {
               await _firebaseService.updateStoryTitle(room, entry, newTitle);
             },
-            onAddNewHistoryEntry: () {
-              _firebaseService.addHistory(room.id);
+            onAddNewHistoryEntry: () async {
+              var task = await _firebaseService.addHistory(room.id);
+
+              // _showVoteDialog(context, task);
+
             },
             onDeleteEntry: (VoteHistoryEntry entry) {
               _firebaseService.deleteHistory(room.id, entry);
@@ -447,6 +478,38 @@ class _PlanningRoomState extends State<PlanningRoom> {
           ),
         ],
       ),
+    );
+  }
+  void _showVoteDialog(BuildContext context, VoteHistoryEntry entry) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          content: SizedBox(
+            child: Text('Do you want to select this task for voting?'),),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
+            ),
+            ElevatedButton.icon(
+              label: Text('Vote'),
+              onPressed: () {
+                setState(() {
+                  _firebaseService.selectedEntry(_currentRoom!.id, entry);
+                });
+                Navigator.of(dialogContext).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 8),
+                  textStyle: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        );
+      },
     );
   }
 

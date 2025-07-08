@@ -14,6 +14,8 @@ class ParticipantsGridView extends StatelessWidget {
   final Future<void> Function(String participantId, String participantName) onKickParticipant;
   final VoidCallback onRevealCards;
   final VoidCallback onResetVoting;
+  final VoidCallback onNextVote;
+  final bool hasNextVote;
   final bool canReveal;
   final bool canReset;
 
@@ -28,6 +30,8 @@ class ParticipantsGridView extends StatelessWidget {
     required this.onKickParticipant,
     required this.onRevealCards,
     required this.onResetVoting,
+    required this.onNextVote,
+    required this.hasNextVote,
     required this.canReveal,
     required this.canReset,
   }) : super(key: key);
@@ -84,6 +88,8 @@ class ParticipantsGridView extends StatelessWidget {
             canReset: canReset,
             onReveal: onRevealCards,
             onReset: onResetVoting,
+            onNextVote: onNextVote,
+            hasNextVote: hasNextVote,
           ),
         ),
       ],

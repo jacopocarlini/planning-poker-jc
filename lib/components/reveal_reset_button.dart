@@ -7,6 +7,8 @@ class RevealResetButton extends StatelessWidget {
   final bool canReset;  // True se cardsRevealed
   final VoidCallback onReveal;
   final VoidCallback onReset;
+  final VoidCallback onNextVote;
+  final bool hasNextVote;
 
   const RevealResetButton({
     super.key,
@@ -15,24 +17,58 @@ class RevealResetButton extends StatelessWidget {
     required this.canReset,
     required this.onReveal,
     required this.onReset,
+    required this.onNextVote,
+    required this.hasNextVote,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        backgroundColor: cardsRevealed ? accentYellow : primaryBlue,
-        foregroundColor: Colors.white,
-        textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
-        disabledBackgroundColor: Colors.grey.shade300,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-      onPressed: cardsRevealed
-          ? (canReset ? onReset : null)
-          : (canReveal ? onReveal : null),
-      icon: Icon(cardsRevealed ? Icons.refresh : Icons.visibility),
-      label: Text(cardsRevealed ? 'Reset Voting' : 'Reveal Cards'),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            backgroundColor: cardsRevealed ? accentYellow : primaryBlue,
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            disabledBackgroundColor: Colors.grey.shade300,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: cardsRevealed
+              ? (canReset ? onReset : null)
+              : (canReveal ? onReveal : null),
+          icon: Icon(cardsRevealed ? Icons.refresh : Icons.visibility),
+          label: Text(cardsRevealed ? 'Reset Voting' : 'Reveal Cards'),
+        ),
+
+        SizedBox(width: 16,),
+
+
+        hasNextVote?
+        ElevatedButton.icon(
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            foregroundColor: Colors.white,
+            textStyle: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500),
+            disabledBackgroundColor: Colors.grey.shade300,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onPressed: hasNextVote ? onNextVote : null,
+          icon: Icon(Icons.next_plan_outlined),
+          label: Text('Select the next Task'),
+        )
+            :
+            OutlinedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: null,
+                icon: Icon(Icons.next_plan_outlined),
+                label: Text('Select the next Task'))
+      ],
     );
   }
 }
