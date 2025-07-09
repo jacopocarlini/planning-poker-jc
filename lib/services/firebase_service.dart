@@ -533,14 +533,15 @@ class RealtimeFirebaseService {
         var id = (elem['id'] as int);
         bool selected = entry.id == id;
         if (elem['selected'] == selected) continue;
-        if (selected)
-          roomRef
+        if (selected) {
+          await roomRef
               .child('currentStoryTitle')
               .set((elem['storyTitle'] ?? 'Unnamed Task') as String);
-        roomRef.child('historyVote').child('v-' + id.toString()).update({
+        }
+        await (roomRef.child('historyVote').child('v-' + id.toString())).update({
           'selected': selected,
         });
-        roomRef.update({
+        await roomRef.update({
           'areCardsRevealed': false,
         });
       }
