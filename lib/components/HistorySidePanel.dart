@@ -3,8 +3,10 @@ import 'dart:html' as html; // Needed for window.history, window.location
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/vote_results_summary_view.dart';
 import 'package:poker_planning/config/theme.dart';
 
+import '../models/room.dart';
 import '../models/vote_history_entry.dart';
 import 'FullVotingHistoryListView.dart';
 
@@ -42,7 +44,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
     });
   }
 
-  void _showDetailsDialog(BuildContext context, VoteHistoryEntry entry) {
+  void _showAlertDialog(BuildContext context, VoteHistoryEntry entry) {
     showDialog(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -71,6 +73,29 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   textStyle: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showDetailsDialog(BuildContext context, VoteHistoryEntry entry) {
+    showDialog(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        return AlertDialog(
+          content: SizedBox(
+              height: MediaQuery.sizeOf(context).height / 2,
+              width: MediaQuery.sizeOf(context).width / 2,
+              child: VoteResultsSummaryView(
+                  room: Room.fromVotesList(entry.voteCounts.keys.toList()))),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+              },
             ),
           ],
         );
@@ -250,7 +275,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
             // }
             Future.delayed(const Duration(milliseconds: 50), () {
               if (ModalRoute.of(context)?.isCurrent ?? false) {
-                _showDetailsDialog(context, entry);
+                _showAlertDialog(context, entry);
               }
             });
           },

@@ -257,24 +257,18 @@ class _PlanningRoomState extends State<PlanningRoom> {
         widget.roomId, _currentRoom!.historyVote[indexOfNext]);
   }
 
-  bool _hasNextVote() {
+  bool _hasTask() {
     if (_currentRoom == null) return false;
-    if (_currentRoom!.historyVote.isEmpty) {
-      return false;
-    }
-    return _currentRoom!.historyVote
-            .indexWhere((elem) => elem.selected == true) <
-        _currentRoom!.historyVote.length - 1;
+    return _currentRoom!.historyVote.isNotEmpty;
   }
 
-  String _nextVote() {
+  String _currentTask() {
     if (_currentRoom == null) return '';
     if (_currentRoom!.historyVote.isEmpty) {
       return '';
     }
     return (_currentRoom!.historyVote
-                .indexWhere((elem) => elem.selected == true) +
-            2)
+                .indexWhere((elem) => elem.selected == true) + 1)
         .toString();
   }
 
@@ -427,8 +421,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
                                 canReveal: canReveal,
                                 canReset: canReset,
                                 onNextVote: _onNextVote,
-                                hasNextVote: _hasNextVote(),
-                                nextTask: _nextVote()
+                                hasTask: _hasTask(),
+                                currentTask: _currentTask()
                                 // isCreator: _myParticipantId == room.creatorId, // Esempio se necessario
                                 ),
                           ),

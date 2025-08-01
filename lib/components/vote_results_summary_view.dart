@@ -256,20 +256,17 @@ class VoteResultsSummaryView extends StatelessWidget {
       }
     }
 
-
-
-    List<MapEntry<String, int>>results = [];
+    List<MapEntry<String, int>> results = [];
 
     for (var elem in room.cardValues) {
       results.add(MapEntry(elem, 0));
       for (var p in participantsWhoVoted) {
         final vote = p.vote!;
-        if(vote == elem){
+        if (vote == elem) {
           results.last = MapEntry(results.last.key, results.last.value + 1);
         }
       }
     }
-
 
     return Card(
       elevation: 3,
@@ -313,11 +310,51 @@ class VoteResultsSummaryView extends StatelessWidget {
                 // Usare participantsWhoVoted.length per il totale
                 _buildResultStat(context, "Average",
                     average != null ? average.toStringAsFixed(1) : "N/A"),
-                _buildResultStat(
-                    context,
-                    "Standard Deviation",
+                _buildResultStat(context, "Standard Deviation",
                     consensusStdDev?.toStringAsFixed(1) ?? 'N/A'),
-                _buildResultStat(context, "Consensus", consensusText),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(                  mainAxisSize: MainAxisSize.min,
+                      children: [ Text("Consensus",
+                        style: Theme.of(context).textTheme.titleMedium),
+                      SizedBox(width: 4,),
+                      Tooltip(
+                        richMessage: TextSpan(
+                          text: 'The consensus is based on the standard deviation of the votes.\n',
+                          children: <InlineSpan>[
+                            TextSpan(
+                              text: 'Strong Yes ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: 'has a standard deviation <= 1\n',
+                            ),  TextSpan(
+                              text: 'Yes ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: 'has a standard deviation <= 2\n',
+                            ),  TextSpan(
+                              text: 'No ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            TextSpan(
+                              text: 'has a standard deviation > 2\n',
+                            ),
+                          ],
+                        ),
+                        child: Icon(Icons.info),
+                      ),],),
+
+                    const SizedBox(height: 4),
+                    Text(consensusText,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontWeight: FontWeight.bold)),
+                  ],
+                )
               ],
             ),
             const SizedBox(

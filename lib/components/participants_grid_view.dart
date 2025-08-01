@@ -15,10 +15,10 @@ class ParticipantsGridView extends StatelessWidget {
   final VoidCallback onRevealCards;
   final VoidCallback onResetVoting;
   final VoidCallback onNextVote;
-  final bool hasNextVote;
+  final bool hasTask;
   final bool canReveal;
   final bool canReset;
-  final String nextTask;
+  final String currentTask;
 
 
   const ParticipantsGridView({
@@ -32,10 +32,10 @@ class ParticipantsGridView extends StatelessWidget {
     required this.onRevealCards,
     required this.onResetVoting,
     required this.onNextVote,
-    required this.hasNextVote,
+    required this.hasTask,
     required this.canReveal,
     required this.canReset,
-    required this.nextTask,
+    required this.currentTask,
   }) : super(key: key);
 
   @override
@@ -91,8 +91,8 @@ class ParticipantsGridView extends StatelessWidget {
             onReveal: onRevealCards,
             onReset: onResetVoting,
             onNextVote: onNextVote,
-            hasNextVote: hasNextVote,
-            nextTask: nextTask,
+            hasTask: hasTask,
+            currentTask: currentTask,
           ),
         ),
       ],
