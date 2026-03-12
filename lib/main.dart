@@ -169,13 +169,15 @@ class _AppWrapperState extends State<AppWrapper> {
   }
 
   Room _roomFromShareableLinkData(String base64Data) {
-    final String jsonVotes =
+    final String payload =
         utf8.decode(base64Url.decode(base64Url.normalize(base64Data)));
-    final List<dynamic> decodedVotesDynamic =
-        jsonDecode(jsonVotes) as List<dynamic>;
-    final List<String> votes =
-        decodedVotesDynamic.map((e) => e.toString()).toList();
-    return Room.fromVotesList(votes);
+    final dynamic decoded = jsonDecode(payload);
+
+    final List<String> votes = List<String>.from(decoded["votes"]);
+    final List<String> cards = List<String>.from(decoded["cards"]);
+    final String name = decoded["name"] ?? '';
+
+    return Room.fromVotes(name, votes, cards);
   }
 
   @override
@@ -247,14 +249,29 @@ class _AppWrapperState extends State<AppWrapper> {
                     ],
                   ),
                   body: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 1200),
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16.0),
-                        child: SizedBox(
-                                height: MediaQuery.sizeOf(context).height / 2,
-                            child: VoteResultsSummaryView(room: roomForResults)),
-                      ),
+                    child: Column(
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 20),
+                          child: Text('Result for ${roomForResults.name}',
+                              style: Theme.of(context).textTheme.titleMedium),
+                        ),
+                        ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 1200),
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              children: [
+
+                                SizedBox(
+                                    height: MediaQuery.sizeOf(context).height / 2,
+                                    child: VoteResultsSummaryView(
+                                        room: roomForResults)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   )),
               settings: settings,

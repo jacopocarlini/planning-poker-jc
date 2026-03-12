@@ -460,8 +460,13 @@ class VoteCalculator {
       return "$baseUrl?error=no_votes";
     }
 
-    final String jsonVotes = jsonEncode(votesToShare);
-    final String base64Votes = base64UrlEncode(utf8.encode(jsonVotes));
+    var toEncode = {
+      "votes": votesToShare,
+      "cards": room.cardValues,
+      "name": room.name,
+    };
+    final String encoded = jsonEncode(toEncode);
+    final String base64Votes = base64UrlEncode(utf8.encode(encoded));
     return "$baseUrl/$base64Votes";
   }
 }

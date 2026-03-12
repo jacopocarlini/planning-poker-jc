@@ -455,6 +455,8 @@ class _PlanningRoomState extends State<PlanningRoom> {
           ),
           HistorySidePanel(
             votingHistory: _votingHistory,
+            cardSet: _currentRoom?.cardValues ?? [],
+            name: room.name,
             collapsedWidth: 60,
             expandedWidth: 400,
             onUpdateEntryTitle:

@@ -26,13 +26,15 @@ class Room {
   }); // Default a lista vuota
 
   // Factory constructor per creare una Room solo da una lista di voti
-  factory Room.fromVotesList(List<String> votes) {
+  factory Room.fromVotes(String? name, List<String> votes, List<String> cardValues) {
     return Room(
       participants: votes
           .map((vote) => Participant(vote: vote, id: '', name: ''))
           .toList(),
       id: '',
       creatorId: '',
+      cardValues: cardValues,
+      name: name ?? '',
     );
   }
 

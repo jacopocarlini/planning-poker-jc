@@ -12,6 +12,8 @@ import 'FullVotingHistoryListView.dart';
 
 class HistorySidePanel extends StatefulWidget {
   final List<VoteHistoryEntry> votingHistory;
+  final List<String> cardSet;
+  final String? name;
   final double collapsedWidth;
   final double expandedWidth;
 
@@ -23,6 +25,8 @@ class HistorySidePanel extends StatefulWidget {
   const HistorySidePanel({
     Key? key,
     required this.votingHistory,
+    required this.cardSet,
+    required this.name,
     required this.collapsedWidth,
     required this.expandedWidth,
     required this.onUpdateEntryTitle,
@@ -89,7 +93,7 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
               height: MediaQuery.sizeOf(context).height / 2,
               width: MediaQuery.sizeOf(context).width / 2,
               child: VoteResultsSummaryView(
-                  room: Room.fromVotesList(entry.voteCounts.keys.toList()))),
+                  room: Room.fromVotes(widget.name, entry.voteCounts.keys.toList(), widget.cardSet))),
           actions: [
             TextButton(
               child: const Text('Cancel'),
@@ -349,8 +353,15 @@ class _HistorySidePanelState extends State<HistorySidePanel> {
   String generateShareableLink() {
     final baseUrl = '${html.window.location.origin}/room';
 
-    final String jsonVotes = jsonEncode(widget.votingHistory);
-    final String base64Votes = base64UrlEncode(utf8.encode(jsonVotes));
+    var toEncode = {
+      "votes": widget.votingHistory,
+      "cards": widget.cardSet,
+      "name": widget.name,
+
+    };
+
+    final String encoded = jsonEncode(toEncode);
+    final String base64Votes = base64UrlEncode(utf8.encode(encoded));
     return "$baseUrl/$base64Votes";
   }
 }
