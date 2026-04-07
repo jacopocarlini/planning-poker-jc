@@ -1,6 +1,7 @@
 import 'dart:math' as math; // Per math.pi
 
 import 'package:flutter/material.dart';
+import 'package:poker_planning/components/PokerCard.dart';
 import 'package:poker_planning/config/geometric_card_pattern_painter.dart';
 import 'package:poker_planning/config/theme.dart'; // Assicurati che primaryBlue sia definito qui
 import 'package:poker_planning/models/participant.dart';
@@ -200,80 +201,7 @@ class _ParticipantCardState extends State<ParticipantCard>
 
       if (hasVoted) {
         // 3. Votato e Rivelato: Numero grande + numeri piccoli angoli
-        cardContent = Stack(
-          alignment: Alignment.center,
-          children: [
-            // Contenitore interno per lo sfondo del numero principale
-            Container(
-              width: 60,
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade50,
-                borderRadius:
-                    BorderRadius.circular(4), // Raggio leggermente più piccolo
-              ),
-            ),
-            // Numero grande centrale
-            Text(
-              vote,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey.shade800,
-              ),
-            ),
-            // Numero piccolo in alto a sinistra
-            Positioned(
-              top: 6,
-              left: 4,
-              child: Container(
-                decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.only(bottomRight: Radius.circular(8))),
-                child: SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: Center(
-                    child: Text(
-                      vote,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blueGrey.shade700,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            // Numero piccolo in basso a destra
-            Positioned(
-              bottom: 6,
-              right: 4,
-              child: Container(
-                decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.only(topLeft: Radius.circular(8))),
-                child: SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: Center(
-                    child: Text(
-                      vote,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.blueGrey.shade700,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        );
+        cardContent = PokerCard(isSelected: false, value: vote);
       } else {
         // 4. Non Votato e Rivelato: Punto interrogativo
         cardDecoration = BoxDecoration(

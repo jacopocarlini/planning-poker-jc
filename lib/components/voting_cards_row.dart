@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:poker_planning/config/theme.dart'; // Assicurati che i percorsi e le variabili siano corretti
+import 'package:poker_planning/config/theme.dart';
+
+import 'PokerCard.dart'; // Assicurati che i percorsi e le variabili siano corretti
 
 class VotingCardsRow extends StatelessWidget {
   final List<String> cardValues;
@@ -50,79 +52,10 @@ class VotingCardsRow extends StatelessWidget {
     );
   }
 
-  Stack buildStack(bool isSelected, String value) {
-    return Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      // Contenitore interno per lo sfondo del numero principale
-                      Container(
-                        width: 60,
-                        height: 100,
-                        decoration: BoxDecoration(
-                          color: isSelected? lightBlueGrey : Colors.blueGrey.shade50,
-                          borderRadius: BorderRadius.circular(4), // Raggio leggermente più piccolo
-                        ),
-                      ),
-                      // Numero grande centrale
-                      Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blueGrey.shade800,
-                        ),
-                      ),
-                      // Numero piccolo in alto a sinistra
-                      Positioned(
-                        top: 6,
-                        left: 4,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.only(bottomRight: Radius.circular(8))),
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: Center(
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey.shade700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Numero piccolo in basso a destra
-                      Positioned(
-                        bottom: 6,
-                        right: 4,
-                        child: Container(
-                          decoration: const BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.only(topLeft: Radius.circular(8))),
-                          child: SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: Center(
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.blueGrey.shade700,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
+  Widget buildStack(bool isSelected, String value) {
+    return PokerCard(isSelected: isSelected, value: value,);
   }
+
 
   Container buildContainer(bool isSelected, String value) {
     return Container(

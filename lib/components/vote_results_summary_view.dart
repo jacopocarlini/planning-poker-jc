@@ -103,45 +103,51 @@ class VoteResultsSummaryView extends StatelessWidget {
                         String displayKey = voteKey;
                         double fontSize = 14;
 
-                        return Padding(
-                            padding: const EdgeInsets.only(top: 6.0),
-                            child: Container(
-                              width: 8 * 4,
-                              height: 12 * 4,
-                              decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  border: Border.all(
-                                    color: Colors.blueGrey.shade200,
-                                    width: 1.5,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.2),
-                                      spreadRadius: 1,
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 2),
+                        return Tooltip(
+                          message: displayKey,
+                          child: Padding(
+                              padding: const EdgeInsets.only(top: 6.0),
+                              child: Container(
+                                width: 8 * 4,
+                                height: 12 * 4,
+                                decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.blueGrey.shade200,
+                                      width: 1.5,
                                     ),
-                                  ]),
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.blueGrey.shade50,
-                                    borderRadius: BorderRadius.circular(2),
-                                  ),
-                                  child: SizedBox(
-                                    height: 28,
-                                    child: Center(
-                                      child: Text(displayKey,
-                                          style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16)),
+                                    borderRadius: BorderRadius.circular(8),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        spreadRadius: 1,
+                                        blurRadius: 3,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ]),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.blueGrey.shade50,
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
+                                    child: SizedBox(
+                                      height: 28,
+                                      child: Center(
+                                        child: FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          child: Text(displayKey,maxLines: 1,
+                                              style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16)),
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ));
+                              )),
+                        );
                       }
                       return const Text('');
                     },
