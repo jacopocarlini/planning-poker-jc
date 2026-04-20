@@ -49,10 +49,13 @@ class RevealResetButton extends StatelessWidget {
           width: 16,
           height: 16,
         ),
-        hasTask
-            ? currentTask != '0'
-                ? Text('🗳️ You are voting for the ${currentTask}° task')
-                : Text('👀 No task selected for voting')
+        hasTask && !cardsRevealed
+            ? Container(
+            decoration: BoxDecoration(border: Border.all(color: currentTask != '0' ? lightBlue : accentYellow), borderRadius: BorderRadius.circular(8)),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Text(currentTask != '0' ? '🗳️ You are voting for the ${currentTask}° task': '👀 No task selected for voting'),
+            ))
             : Container(),
       ],
     );

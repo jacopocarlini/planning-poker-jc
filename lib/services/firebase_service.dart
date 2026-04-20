@@ -667,4 +667,18 @@ class RealtimeFirebaseService {
       throw Exception("Database error submitting vote: $e");
     }
   }
+
+  Future<void> updateCardValues(String roomId, List<String> finalCards) async {
+    // Otteniamo il riferimento specifico al campo 'cardValues' della stanza
+    final cardsRef = _getRoomRef(roomId).child('cardValues');
+
+    try {
+      // Sovrascriviamo l'array delle carte con quello nuovo
+      await cardsRef.set(finalCards);
+    } catch (e) {
+      // Catturiamo e rilanciamo l'errore per farlo gestire all'interfaccia utente
+      throw Exception("Database error updating card values: $e");
+    }
+  }
+
 }
