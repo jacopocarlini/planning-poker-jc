@@ -32,20 +32,17 @@ class _PokerCardState extends State<PokerCard> {
       Padding(
         padding: const EdgeInsets.all(12.0),
         child: Center(
-          child: FittedBox(
-            fit: BoxFit.scaleDown, // Scala il testo se è troppo grande
-            child: Text(
-              value,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 24,
-                // Dimensione base alta, FittedBox la abbasserà se serve
-                fontWeight: FontWeight.bold,
-                color: Colors.blueGrey.shade800,
-              ),
-              maxLines: 2, // Permette di andare a capo una volta se necessario
-              overflow: TextOverflow.ellipsis,
+          child: Text(
+            value,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 24,
+
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey.shade800,
             ),
+            maxLines: 1, // Permette di andare a capo una volta se necessario
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ),
@@ -102,8 +99,11 @@ class _PokerCardState extends State<PokerCard> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-        alignment: Alignment.center,
-        children: poker_card(widget.isSelected, widget.value));
+    return Tooltip(
+      message: widget.value,
+      child: Stack(
+          alignment: Alignment.center,
+          children: poker_card(widget.isSelected, widget.value)),
+    );
   }
 }

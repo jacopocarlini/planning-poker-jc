@@ -135,13 +135,11 @@ class VoteResultsSummaryView extends StatelessWidget {
                                     child: SizedBox(
                                       height: 28,
                                       child: Center(
-                                        child: FittedBox(
-                                          fit: BoxFit.scaleDown,
-                                          child: Text(displayKey,maxLines: 1,
-                                              style: const TextStyle(
-                                                  fontWeight: FontWeight.bold,
-                                                  fontSize: 16)),
-                                        ),
+                                        child: Text(displayKey,maxLines: 1,
+                                            style: const TextStyle(
+                                              overflow: TextOverflow.ellipsis,
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16)),
                                       ),
                                     ),
                                   ),

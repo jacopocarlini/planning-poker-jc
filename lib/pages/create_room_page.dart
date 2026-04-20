@@ -99,6 +99,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     decoration: const InputDecoration(
                       labelText: 'Room Name',
                       prefixIcon: Icon(Icons.meeting_room),
+                      border: OutlineInputBorder(), // Aggiunto bordo per coerenza visiva
                     ),
                     validator: (value) =>
                     value == null || value.isEmpty ? 'Please enter a room name' : null,
@@ -112,6 +113,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     decoration: const InputDecoration(
                       labelText: 'Card Set',
                       prefixIcon: Icon(Icons.style),
+                      border: OutlineInputBorder(), // Aggiunto bordo per coerenza visiva
                     ),
                     items: dropdownOptions.map((String setName) {
                       return DropdownMenuItem<String>(
@@ -128,49 +130,91 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                     },
                   ),
 
-                  // Sezione Custom (appare solo se selezionato Custom...)
+                  // --- NUOVA SEZIONE CUSTOM ---
                   if (_selectedCardSetName == _customOption) ...[
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Custom Card Values',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Type a value and press Enter or the Add button.',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
                             controller: _customValueController,
-                            decoration: const InputDecoration(
-                              labelText: 'Add card value',
-                              hintText: 'e.g. 100, ??, 🍕',
+                            decoration: InputDecoration(
+                              labelText: 'Add value',
+                              border: const OutlineInputBorder(),
+                              // Spostato il bottone dentro l'input field per una UX migliore
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.add_circle, color: Colors.blueAccent),
+                                onPressed: _addCustomCard,
+                                tooltip: 'Add to set',
+                              ),
                             ),
                             onSubmitted: (_) => _addCustomCard(),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle, color: Colors.blueAccent),
-                          onPressed: _addCustomCard,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Wrap(
-                        spacing: 8.0,
-                        runSpacing: 4.0,
-                        children: _customCardsList.asMap().entries.map((entry) {
-                          return InputChip(
-                            label: Text(entry.value),
-                            onDeleted: () => _removeCustomCard(entry.key),
-                          );
-                        }).toList(),
+                          const SizedBox(height: 16),
+
+                          // Gestione chiara dell'Empty State
+                          if (_customCardsList.isEmpty)
+                            Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                                child: Text(
+                                  'No value added yet.',
+                                  style: TextStyle(
+                                    fontStyle: FontStyle.italic,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: 8.0,
+                              runSpacing: 8.0,
+                              children: _customCardsList.asMap().entries.map((entry) {
+                                return InputChip(
+                                  label: Text(entry.value),
+                                  deleteIcon: const Icon(Icons.cancel, size: 18),
+                                  onDeleted: () => _removeCustomCard(entry.key),
+                                  tooltip: 'Remove card',
+                                );
+                              }).toList(),
+                            ),
+                        ],
                       ),
                     ),
                   ],
+                  // --- FINE SEZIONE CUSTOM ---
 
                   const SizedBox(height: 32),
 
                   // Opzioni Room
                   SwitchListTile(
                     title: const Text("Enter as Spectator"),
+                    subtitle: const Text("Join without voting"),
                     value: _isSpectator,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     onChanged: (value) {
                       setState(() => _isSpectator = value);
                       _prefsService.saveIsSpectator(value);
@@ -178,7 +222,9 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   ),
                   SwitchListTile(
                     title: const Text("Persistent Room"),
+                    subtitle: const Text("Save this room for future sessions"),
                     value: _isPersistent,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     onChanged: (value) {
                       setState(() => _isPersistent = value);
                     },
@@ -190,11 +236,11 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
+                      minimumSize: const Size(double.infinity, 54),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: _createRoom,
-                    child: const Text('Create Room', style: TextStyle(fontSize: 16)),
+                    child: const Text('Create Room', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
